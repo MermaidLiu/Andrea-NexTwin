@@ -8,7 +8,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
 
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -180,9 +180,70 @@ async def platform_stats():
     return {"world_models": 12847, "sdk_packages": 36, "deploy_nodes": 892, "developers": 4200}
 
 
+# ── Developer portal API ──
+
+@app.get("/api/v1/developer/sdk/list")
+async def dev_sdk_list():
+    from nextwin.developer_store import list_sdk
+    return list_sdk()
+
+
+@app.post("/api/v1/developer/sdk/upload")
+async def dev_sdk_upload(
+    name: str = Form(...),
+    version: str = Form(...),
+    robot: str = Form("generic"),
+    description: str = Form(""),
+    file: UploadFile | None = File(None),
+):
+    from nextwin.developer_store import SDK_DIR, register_sdk, save_upload_file
+
+    filename = None
+    if file and file.filename:
+        filename = await save_upload_file(file, SDK_DIR)
+    return register_sdk(name, version, robot, description, filename)
+
+
+@app.delete("/api/v1/developer/sdk/{sdk_id}")
+async def dev_sdk_delete(sdk_id: str):
+    from nextwin.developer_store import delete_sdk
+    if not delete_sdk(sdk_id):
+        raise HTTPException(404, "SDK not found")
+    return {"status": "deleted"}
+
+
+@app.get("/api/v1/developer/worldmodel/list")
+async def dev_wm_list():
+    from nextwin.developer_store import list_world_models
+    return list_world_models()
+
+
+@app.post("/api/v1/developer/worldmodel/upload")
+async def dev_wm_upload(
+    name: str = Form(...),
+    publish_type: str = Form("platform"),
+    scene: str = Form("通用"),
+    fidelity: int = Form(85),
+    physics: int = Form(88),
+    description: str = Form(""),
+    file: UploadFile | None = File(None),
+):
+    from nextwin.developer_store import WM_DIR, register_world_model, save_upload_file
+
+    filename = None
+    if file and file.filename:
+        filename = await save_upload_file(file, WM_DIR)
+    return register_world_model(name, publish_type, scene, fidelity, physics, description, filename)
+
+
 @app.get("/")
 async def index():
     return FileResponse(WEB_DIR / "index.html")
+
+
+@app.get("/developer")
+async def developer_page():
+    return FileResponse(WEB_DIR / "developer.html")
 
 
 @app.get("/workspace")

@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>开发者中心 · NexTwin Studio</title>
+  <link rel="stylesheet" href="/static/css/tokens.css" />
+  <link rel="stylesheet" href="/static/css/developer.css" />
+</head>
+<body class="developer-page">
+
+  <header class="dev-header">
+    <a href="/" class="logo-link">
+      <div class="logo-mark">N</div>
+      <div class="logo-text"><strong>NexTwin Studio</strong><span>开发者中心</span></div>
+    </a>
+    <nav class="dev-nav">
+      <a href="/">首页</a>
+      <a href="/workspace">用户工作台</a>
+      <a href="/developer" class="active">开发者</a>
+      <a href="/docs">API 文档</a>
+    </nav>
+    <div class="dev-header-right">
+      <span class="tag-purple">个人开发者</span>
+      <div class="user-chip"><div class="user-avatar">D</div><span id="dev-name">开发者</span></div>
+    </div>
+  </header>
+
+  <div class="dev-hero">
+    <h1>开发者中心</h1>
+    <p>上传 SDK、优化机器人适配、发布世界模型，接入 NexTwin 具身智能生态</p>
+  </div>
+
+  <div class="dev-tabs-wrap">
+    <div class="dev-tabs">
+      <button class="dev-tab active" data-tab="robot">🦾 机器人</button>
+      <button class="dev-tab" data-tab="worldmodel">🌐 世界模型</button>
+    </div>
+  </div>
+
+  <main class="dev-main">
+
+    <!-- TAB: 机器人 -->
+    <section class="dev-panel active" id="panel-robot">
+      <div class="dev-grid-2">
+        <!-- 上传 SDK -->
+        <div class="dev-card">
+          <h2>📦 上传 SDK</h2>
+          <p class="card-desc">支持 Python 包、ROS2 工作空间、Docker 镜像描述（.zip / .tar.gz）</p>
+          <form id="form-sdk-upload" class="upload-form">
+            <div class="drop-zone" id="sdk-drop">
+              <input type="file" id="sdk-file" accept=".zip,.tar.gz,.tgz,.whl" hidden />
+              <div class="drop-icon">📁</div>
+              <p>拖拽 SDK 包到此处，或 <button type="button" class="link-btn" id="sdk-browse">浏览文件</button></p>
+              <span class="drop-hint" id="sdk-filename">未选择文件</span>
+            </div>
+            <label>SDK 名称 <input type="text" name="name" placeholder="例: unitree-g1-rescue-sdk" required /></label>
+            <label>目标机器人
+              <select name="robot">
+                <option value="unitree-g1">宇树 G1</option>
+                <option value="unitree-go2">宇树 Go2</option>
+                <option value="generic">通用 / 自定义</option>
+              </select>
+            </label>
+            <label>版本号 <input type="text" name="version" placeholder="1.0.0" required /></label>
+            <label>简介 <textarea name="description" rows="2" placeholder="SDK 功能说明…"></textarea></label>
+            <button type="submit" class="btn-brand btn-primary">上传 SDK</button>
+          </form>
+        </div>
+
+        <!-- SDK 优化 -->
+        <div class="dev-card">
+          <h2>⚡ SDK 优化</h2>
+          <p class="card-desc">针对目标硬件做延迟、内存、通信链路优化</p>
+          <form id="form-sdk-optimize" class="opt-form">
+            <label>选择已上传 SDK
+              <select id="opt-sdk-select" name="sdk_id"><option value="">— 先上传 SDK —</option></select>
+            </label>
+            <div class="opt-types">
+              <label class="check-card"><input type="checkbox" name="opt" value="latency" checked /> 降低延迟</label>
+              <label class="check-card"><input type="checkbox" name="opt" value="memory" /> 内存优化</label>
+              <label class="check-card"><input type="checkbox" name="opt" value="bandwidth" /> 带宽压缩</label>
+              <label class="check-card"><input type="checkbox" name="opt" value="power" /> 功耗优化</label>
+            </div>
+            <label>目标场景
+              <select name="scene"><option>救援</option><option>巡检</option><option>工业维护</option><option>仓储</option></select>
+            </label>
+            <button type="submit" class="btn-brand btn-secondary">运行优化分析</button>
+          </form>
+          <div class="opt-result hidden" id="opt-result">
+            <h3>优化报告</h3>
+            <ul id="opt-report"></ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- 开发者能力矩阵 -->
+      <h2 class="section-title">个人开发者能力</h2>
+      <div class="capability-grid">
+        <div class="cap-card">
+          <span class="cap-icon">🔌</span>
+          <strong>接入调试</strong>
+          <p>沙盒环境测试 SDK，模拟 G1 传感器与执行回调</p>
+          <button type="button" class="btn-brand btn-ghost-light btn-sm cap-btn" data-action="sandbox">打开沙盒</button>
+        </div>
+        <div class="cap-card">
+          <span class="cap-icon">📊</span>
+          <strong>性能测评</strong>
+          <p>自动生成延迟 / 吞吐量 / 稳定性报告</p>
+          <button type="button" class="btn-brand btn-ghost-light btn-sm cap-btn" data-action="benchmark">开始测评</button>
+        </div>
+        <div class="cap-card">
+          <span class="cap-icon">🔑</span>
+          <strong>API Key</strong>
+          <p>管理 REST / WebSocket 调用密钥与配额</p>
+          <button type="button" class="btn-brand btn-ghost-light btn-sm cap-btn" data-action="apikey">管理密钥</button>
+        </div>
+        <div class="cap-card">
+          <span class="cap-icon">🪝</span>
+          <strong>Webhook</strong>
+          <p>任务完成 / 异常告警回调到你的服务</p>
+          <button type="button" class="btn-brand btn-ghost-light btn-sm cap-btn" data-action="webhook">配置 Webhook</button>
+        </div>
+        <div class="cap-card">
+          <span class="cap-icon">📤</span>
+          <strong>发布上架</strong>
+          <p>提交至 NexTwin 机器人应用市场，供用户选用</p>
+          <button type="button" class="btn-brand btn-ghost-light btn-sm cap-btn" data-action="publish">提交审核</button>
+        </div>
+        <div class="cap-card">
+          <span class="cap-icon">📖</span>
+          <strong>文档生成</strong>
+          <p>从 SDK 元数据自动生成 API 参考文档</p>
+          <a href="/docs" class="btn-brand btn-ghost-light btn-sm cap-btn">查看文档</a>
+        </div>
+      </div>
+
+      <!-- 我的 SDK 列表 -->
+      <h2 class="section-title">我的 SDK</h2>
+      <div class="table-wrap">
+        <table class="dev-table">
+          <thead><tr><th>名称</th><th>版本</th><th>机器人</th><th>状态</th><th>上传时间</th><th>操作</th></tr></thead>
+          <tbody id="sdk-list-body"><tr><td colspan="6" class="empty">暂无 SDK，请先上传</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- TAB: 世界模型 -->
+    <section class="dev-panel" id="panel-worldmodel">
+      <div class="dev-grid-2">
+        <div class="dev-card dev-card-highlight">
+          <h2>🌍 上传世界模型</h2>
+          <p class="card-desc">支持 USD / URDF 场景包、YAML 配置、完整 zip 包（含物理参数）</p>
+          <form id="form-wm-upload" class="upload-form">
+            <div class="drop-zone purple" id="wm-drop">
+              <input type="file" id="wm-file" accept=".zip,.usd,.usda,.yaml,.yml,.json" hidden />
+              <div class="drop-icon">🌐</div>
+              <p>拖拽世界模型到此处，或 <button type="button" class="link-btn" id="wm-browse">浏览文件</button></p>
+              <span class="drop-hint" id="wm-filename">未选择文件</span>
+            </div>
+            <label>模型名称 <input type="text" name="name" placeholder="例: collapse-rescue-v2" required /></label>
+            <label>发布类型
+              <select name="publish_type">
+                <option value="platform">入驻 NexTwin 平台</option>
+                <option value="opensource">开源发布</option>
+                <option value="private">私有（仅自己使用）</option>
+              </select>
+            </label>
+            <label>适用场景
+              <select name="scene"><option>救援</option><option>巡检</option><option>工业</option><option>室内导航</option><option>通用</option></select>
+            </label>
+            <div class="metric-inputs">
+              <label>还原度 % <input type="number" name="fidelity" min="0" max="100" value="85" /></label>
+              <label>物理精度 % <input type="number" name="physics" min="0" max="100" value="88" /></label>
+            </div>
+            <label>描述 <textarea name="description" rows="2" placeholder="场景结构、坐标系、支持的机器人…"></textarea></label>
+            <button type="submit" class="btn-brand btn-primary">上传世界模型</button>
+          </form>
+        </div>
+
+        <div class="dev-card">
+          <h2>📋 入驻指南</h2>
+          <ul class="guide-list">
+            <li><strong>1. 打包规范</strong> — 根目录含 <code>manifest.yaml</code>，声明坐标系与单位</li>
+            <li><strong>2. 物理参数</strong> — 摩擦系数、重力、碰撞体需与真机标定一致</li>
+            <li><strong>3. 还原度</strong> — 平台审核要求还原度 ≥ 80%，物理精度 ≥ 75%</li>
+            <li><strong>4. 审核周期</strong> — 入驻模型 1–3 工作日，开源模型即时可见</li>
+            <li><strong>5. 版本管理</strong> — 语义化版本号，支持增量更新</li>
+          </ul>
+          <div class="guide-stats">
+            <div><span>平台入驻</span><strong>128+</strong></div>
+            <div><span>开源模型</span><strong>36+</strong></div>
+            <div><span>月均下载</span><strong>2.4k</strong></div>
+          </div>
+        </div>
+      </div>
+
+      <h2 class="section-title">我的世界模型</h2>
+      <div class="wm-dev-grid" id="wm-list"></div>
+    </section>
+
+  </main>
+
+  <!-- Toast -->
+  <div class="toast hidden" id="toast"></div>
+
+  <script src="/static/js/developer.js"></script>
+</body>
+</html>

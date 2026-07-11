@@ -33,6 +33,8 @@ MODE=$(python3 -c "from nextwin.runtime import vision_stack_available; print('fu
 
 echo "→ 运行模式: $MODE"
 echo "→ 首页: http://localhost:8080"
+echo "→ 工作台: http://localhost:8080/workspace"
+echo "→ 开发者: http://localhost:8080/developer"
 echo "→ Studio: http://localhost:8080/studio"
 echo "→ 按 Ctrl+C 停止"
 python3 -m nextwin

@@ -27,6 +27,7 @@ models/*
 !models/.gitkeep
 !models/README.md
 
-# OS
+uploads/*
+!uploads/.gitkeep
 .DS_Store
 Thumbs.db

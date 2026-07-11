@@ -3,6 +3,7 @@ fastapi>=0.110.0
 uvicorn[standard]>=0.27.0
 pydantic>=2.0.0
 pyyaml>=6.0
+python-multipart>=0.0.9
 
 # 可选扩展（按需安装，见 scripts/install_vision.sh）:
 #   requirements-vision.txt  — numpy / OpenCV / G1 感知

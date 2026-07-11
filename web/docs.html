@@ -26,6 +26,7 @@
         <div class="logo-text"><strong>NexTwin Studio</strong><span>API 文档</span></div>
       </a>
       <div class="header-actions">
+        <a href="/developer" class="btn-brand btn-secondary" style="margin-right:8px">开发者中心</a>
         <a href="/studio" class="btn-brand btn-primary">进入 Studio</a>
       </div>
     </div>
@@ -40,6 +41,13 @@
     <div class="endpoint"><span class="method method-get">GET</span><code>/api/v1/camera/preview</code><p>G1 相机实时帧 + 四向切分</p></div>
     <div class="endpoint"><span class="method method-post">POST</span><code>/api/v1/sensor/scan</code><p>完整 RTV 感知分析（YOLO + 规则引擎）</p></div>
     <div class="endpoint"><span class="method method-get">GET</span><code>/api/v1/platform/stats</code><p>平台统计数据</p></div>
+
+    <h2 style="margin:32px 0 12px;font-size:18px">开发者中心</h2>
+    <div class="endpoint"><span class="method method-post">POST</span><code>/api/v1/developer/sdk/upload</code><p>上传 SDK（multipart: name, version, robot, description, file）</p></div>
+    <div class="endpoint"><span class="method method-get">GET</span><code>/api/v1/developer/sdk/list</code><p>我的 SDK 列表</p></div>
+    <div class="endpoint"><span class="method method-post">POST</span><code>/api/v1/developer/worldmodel/upload</code><p>上传世界模型（multipart: name, publish_type, scene, fidelity, physics, description, file）</p></div>
+    <div class="endpoint"><span class="method method-get">GET</span><code>/api/v1/developer/worldmodel/list</code><p>我的世界模型列表</p></div>
+    <p style="margin-top:8px;color:var(--text-secondary);font-size:13px">页面入口: <a href="/developer">/developer</a></p>
     <p style="margin-top:8px;color:var(--text-secondary);font-size:13px">WebSocket: <code>ws://localhost:8080/ws</code></p>
 
     <pre>curl -X POST http://localhost:8080/api/v1/task \
