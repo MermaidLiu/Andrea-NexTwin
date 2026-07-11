@@ -5,25 +5,21 @@ cd "$(dirname "$0")/.."
 
 echo "⬡ NexTwin Studio 启动中..."
 
-if [ ! -d ".venv" ]; then
-  echo "→ 创建虚拟环境..."
-  python3 -m venv .venv
-fi
-
-source .venv/bin/activate
-
-if ! python3 -c "import fastapi, ultralytics" 2>/dev/null; then
-  echo "→ 安装依赖（含 YOLO，首次约 3-5 分钟）..."
-  pip install -r requirements.txt
+if ! python3 -c "import cv2, fastapi, ultralytics" 2>/dev/null; then
+  chmod +x scripts/install_deps.sh
+  ./scripts/install_deps.sh
 else
+  # shellcheck disable=SC1091
+  [ -d ".venv" ] && source .venv/bin/activate
   echo "→ 依赖已就绪，跳过安装"
 fi
 
-# G1 onboard 相机 + 雷达（ROS2）
+# shellcheck disable=SC1091
+[ -d ".venv" ] && source .venv/bin/activate
+
 export UNITREE_SENSOR_MODE="${UNITREE_SENSOR_MODE:-ros2}"
 export NEXTWIN_ENABLE_YOLO="${NEXTWIN_ENABLE_YOLO:-1}"
 
-# 若已安装 unitree_ros2，自动 source
 if [ -f "$HOME/unitree_ros2/setup.sh" ]; then
   # shellcheck disable=SC1091
   source "$HOME/unitree_ros2/setup.sh"

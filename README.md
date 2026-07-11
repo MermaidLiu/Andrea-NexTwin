@@ -110,11 +110,30 @@ source ~/unitree_ros2/setup.sh
 
 ```bash
 python3 -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
+chmod +x scripts/install_deps.sh
+./scripts/install_deps.sh
 source ~/unitree_ros2/setup.sh
 export UNITREE_SENSOR_MODE=ros2
 export NEXTWIN_ENABLE_YOLO=1
 python3 -m nextwin
+```
+
+### macOS 安装报错（opencv-python wheel）
+
+若出现 `Failed to build installable wheels for opencv-python`：
+
+```bash
+# 删除旧环境后重装（统一用 pip3）
+rm -rf .venv
+chmod +x scripts/install_deps.sh
+./scripts/install_deps.sh
+```
+
+脚本会使用 `opencv-python-headless` 预编译包，无需本地编译。手动安装：
+
+```bash
+pip3 install "numpy>=1.24.0,<2.0.0" "opencv-python-headless==4.8.1.78" --only-binary :all:
+pip3 install -r requirements.txt
 ```
 
 复制 `.env.g1.example` 可配置话题与 YOLO 模型路径。
