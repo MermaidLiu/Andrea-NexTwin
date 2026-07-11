@@ -1,0 +1,52 @@
+# NexTwin MVP — 障碍物搬离场景
+# 用户指令示例：识别前方长方体障碍物，走过去将其搬离
+
+scene: obstacle_box_clearance
+scenario: obstacle
+target: obstacle_box
+
+instruction: >
+  识别前方长方体障碍物，走过去将其搬离通道。
+
+objects:
+  - id: unitree
+    label: 宇树机器人
+    type: robot
+    position: [0, 0, 0]
+  - id: obstacle_box
+    label: 长方体障碍物
+    type: obstacle
+    position: [-2.0, 0.25, -1.5]
+    metadata:
+      shape: box
+      size: [0.6, 0.4, 0.5]   # 长×高×宽 (m)
+      mass_kg: 8.0
+  - id: path_zone
+    label: 通道
+    type: zone
+    position: [-1.0, 0, -0.8]
+
+waypoints:
+  home: [0.0, 0.0, 0.0]
+  approach: [-1.2, 0.0, -1.0]
+  push_point: [-1.8, 0.0, -1.4]
+  clear_zone: [0.5, 0.0, 0.5]
+
+yolo:
+  target_class: obstacle_box
+  coco_demo_aliases:
+    suitcase: obstacle_box
+    book: obstacle_box
+    handbag: obstacle_box
+    chair: obstacle_box
+
+rule_engine:
+  sequence:
+    - turn_toward_target
+    - forward_to_box
+    - stop
+    - push_box_away
+
+physics:
+  push_distance_m: 1.2
+  friction: 0.6

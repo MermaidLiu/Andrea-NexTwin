@@ -7,7 +7,6 @@ from collections.abc import Awaitable, Callable
 from typing import Any
 
 from nextwin.devices.g1_control import G1Controller
-from nextwin.config import ROBOT_WAYPOINTS_RESCUE
 from nextwin.models import RescuePhase, RobotActionType, TaskBlueprint, WorldModelState
 from nextwin.rtv.pipeline import RTVPipeline
 from nextwin.world_model import WorldModel
@@ -53,7 +52,7 @@ class RescueExecutor:
                 await self._run_phase(step.phase, index, total, broadcast)
 
             if self.world.state.status == "running":
-                self.world.complete_rescue()
+                self.world.complete_mission()
                 await broadcast({"type": "rescue_complete", "state": self.world.snapshot().model_dump()})
         finally:
             self._running = False
@@ -76,7 +75,9 @@ class RescueExecutor:
 
         elif phase == RescuePhase.UNITREE_SENSING.value:
             await self._sleep(duration * 0.3, phase, broadcast, {"overlay": "G1 Livox + D435i 采集中..."})
-            self._rtv_result = self.rtv.run_full_analysis()
+            self._rtv_result = self.rtv.run_full_analysis(
+                scenario=self.world.state.scenario or "rescue"
+            )
             self.world.apply_rtv_result(self._rtv_result)
             await broadcast({
                 "type": "sensor_ready",
@@ -125,17 +126,27 @@ class RescueExecutor:
             await self._execute_actions(broadcast, duration)
 
         elif phase == RescuePhase.RESCUE_SUCCESS.value:
-            self.world.complete_rescue()
+            self.world.complete_mission()
             await broadcast({"type": "rescue_success", "state": self.world.snapshot().model_dump()})
             await self._sleep(duration, phase, broadcast)
 
         elif phase == RescuePhase.DISPLAY_RESULT.value:
+            target = (
+                "obstacle_box"
+                if self.world.state.scenario == "obstacle"
+                else "mini_pi"
+            )
+            msg = (
+                "长方体障碍物已搬离，通道畅通"
+                if self.world.state.scenario == "obstacle"
+                else "Mini Pi 已成功解救"
+            )
             await broadcast({
                 "type": "display_result",
                 "result": {
                     "status": "success",
-                    "target": "mini_pi",
-                    "message": "Mini Pi 已成功解救",
+                    "target": target,
+                    "message": msg,
                     "observation": self._rtv_result.get("observation"),
                     "actions_executed": self._rtv_result.get("action_plan"),
                 },
@@ -155,7 +166,8 @@ class RescueExecutor:
             return
 
         per_action = duration / len(plan.actions)
-        waypoints = ROBOT_WAYPOINTS_RESCUE
+        waypoints = self.world.waypoints()
+        push_point = waypoints.get("push_point", waypoints["home"])
 
         for i, action in enumerate(plan.actions):
             if self._cancel:
@@ -181,7 +193,7 @@ class RescueExecutor:
             elif action.action == RobotActionType.FORWARD:
                 await self._animate_robot(
                     list(waypoints["home"]),
-                    list(waypoints["push_point"]),
+                    list(push_point),
                     per_action * 0.6,
                     broadcast,
                 )

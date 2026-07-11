@@ -218,9 +218,12 @@ export class NexTwinScene {
         case 'victim':
           mesh = this._makeBox(0.3, 0.25, 0.2, OBJECT_COLORS.victim || 0xf97316, 0.125);
           break;
-        case 'obstacle':
-          mesh = this._makeBox(0.8, 0.5, 0.6, OBJECT_COLORS.obstacle);
+        case 'obstacle': {
+          const size = obj.metadata?.size || [0.8, 0.5, 0.6];
+          const color = obj.id === 'obstacle_box' ? 0xeab308 : OBJECT_COLORS.obstacle;
+          mesh = this._makeBox(size[0], size[1], size[2], color);
           break;
+        }
         case 'equipment':
           mesh = this._makeBox(0.8, 1.2, 0.8, OBJECT_COLORS.equipment);
           // Print bed
@@ -254,6 +257,12 @@ export class NexTwinScene {
     if (ring) {
       ring.material.opacity = 0.3 + Math.sin(Date.now() * 0.005) * 0.15;
     }
+  }
+
+  updateObjectPosition(objId, pos) {
+    const mesh = this.meshes[objId];
+    if (!mesh || !pos) return;
+    mesh.position.set(pos[0], pos[1] ?? mesh.position.y, pos[2]);
   }
 
   updateObjectState(objId, state) {

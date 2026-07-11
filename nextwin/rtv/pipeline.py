@@ -51,7 +51,8 @@ class RTVPipeline:
             return self.lidar.merge_with_vision(lidar_views, scan.vision.image)
         return camera_views
 
-    def run_full_analysis(self) -> dict[str, Any]:
+    def run_full_analysis(self, scenario: str = "rescue") -> dict[str, Any]:
+        self.detector.scenario = scenario
         scan = self.sensor.scan_with_retry()
         bev = self.lidar.bev_preview(scan.lidar.points)
         lidar_stats = self.lidar.lidar_stats(scan.lidar.points)
@@ -69,29 +70,45 @@ class RTVPipeline:
             views_dets[view_name] = dets
             all_detections.extend(dets)
 
-        # mock 补全仅当 YOLO 未启用或未检出目标
-        if self.detector.mode == "mock" and not any(
-            d.get("class") == "mini_pi" for d in all_detections
-        ):
-            front_img = views_img["front"]
-            mock = self.detector._detect_mock(front_img)
-            for d in mock:
-                d["view"] = "front"
-                d["scene_position"] = self.lidar.bbox_to_scene_position(
-                    "front", d["bbox"], front_img.shape[1], front_img.shape[0]
-                )
-            views_dets["front"] = mock
-            all_detections.extend(mock)
+        # mock 补全：按场景注入演示检测
+        if self.detector.mode == "mock":
+            need_mock = (
+                scenario == "obstacle"
+                and not any(d.get("class") == "obstacle_box" for d in all_detections)
+            ) or (
+                scenario == "rescue"
+                and not any(d.get("class") == "mini_pi" for d in all_detections)
+            )
+            if need_mock:
+                front_img = views_img["front"]
+                mock = self.detector._detect_mock(front_img, scenario)
+                for d in mock:
+                    d["view"] = "front"
+                    d["scene_position"] = self.lidar.bbox_to_scene_position(
+                        "front", d["bbox"], front_img.shape[1], front_img.shape[0]
+                    )
+                views_dets["front"] = mock
+                all_detections = [d for d in all_detections if d.get("view") != "front"]
+                all_detections.extend(mock)
 
-        target_view, target_det = self.detector.find_rescue_target(all_detections)
+        target_view, target_det = self.detector.find_target(all_detections, scenario)
         if target_det is None:
-            target_det = {
-                "class": "mini_pi",
-                "label": "Mini Pi (被压)",
-                "confidence": 0.0,
-                "bbox": [200, 250, 440, 520],
-                "scene_position": [-2.5, 0.15, -1.8],
-            }
+            if scenario == "obstacle":
+                target_det = {
+                    "class": "obstacle_box",
+                    "label": "长方体障碍物",
+                    "confidence": 0.0,
+                    "bbox": [200, 280, 440, 520],
+                    "scene_position": [-2.0, 0.25, -1.5],
+                }
+            else:
+                target_det = {
+                    "class": "mini_pi",
+                    "label": "Mini Pi (被压)",
+                    "confidence": 0.0,
+                    "bbox": [200, 250, 440, 520],
+                    "scene_position": [-2.5, 0.15, -1.8],
+                }
 
         observation = build_observation(
             views_dets,
@@ -101,8 +118,9 @@ class RTVPipeline:
             sensor_source="unitree_g1_lidar_vision",
             lidar_stats=lidar_stats,
             sensor_mode=scan.mode,
+            scenario=scenario,
         )
-        action_plan = plan_actions(observation)
+        action_plan = plan_actions(observation, scenario)
 
         result = {
             "sensor": {
@@ -134,7 +152,7 @@ class RTVPipeline:
                 f"[G1/{scan.mode}] YOLO({self.detector.mode}) "
                 f"{target_view}方向识别 {target_det.get('label', '目标')}，"
                 f"置信度 {target_det.get('confidence', 0):.0%}，"
-                f"点云 {scan.lidar.point_count} pts"
+                f"场景 {scenario}，点云 {scan.lidar.point_count} pts"
             ),
         }
         self.last_result = result

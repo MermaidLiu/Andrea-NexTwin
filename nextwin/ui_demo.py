@@ -7,7 +7,7 @@ from collections.abc import Awaitable, Callable
 from datetime import datetime, timezone
 from typing import Any
 
-from nextwin.config import ROBOT_WAYPOINTS_RESCUE
+from nextwin.config import ROBOT_WAYPOINTS_OBSTACLE, ROBOT_WAYPOINTS_RESCUE
 from nextwin.devices.g1_control import G1Controller
 from nextwin.models import RescuePhase, RobotActionType, TaskBlueprint, WorldModelState
 from nextwin.world_model import WorldModel
@@ -57,6 +57,51 @@ MOCK_RTV_RESULT: dict[str, Any] = {
 }
 
 
+MOCK_OBSTACLE_RTV_RESULT: dict[str, Any] = {
+    "sensor": {"mode": "ui-demo", "point_count": 6000, "lidar_stats": {"point_count": 6000}},
+    "bev_preview_b64": "",
+    "camera_preview_b64": "",
+    "split_views": {},
+    "views_detections": {
+        "front": [
+            {
+                "class": "obstacle_box",
+                "label": "长方体障碍物",
+                "confidence": 0.91,
+                "bbox": [210, 290, 430, 510],
+                "view": "front",
+            }
+        ]
+    },
+    "target_view": "front",
+    "summary": "[UI Demo] 前方 YOLO 识别到长方体障碍物",
+    "observation": {
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "panorama_source": "ui_demo",
+        "views": {"front": []},
+        "target": {
+            "id": "obstacle_box",
+            "class": "obstacle_box",
+            "label": "长方体障碍物",
+            "confidence": 0.91,
+            "view": "front",
+            "position_estimate": [-2.0, 0.25, -1.5],
+        },
+        "scene_assessment": "obstacle_box_blocking_path",
+        "detector_mode": "ui-demo",
+    },
+    "action_plan": {
+        "rule_version": "v1.0-obstacle-mvp",
+        "actions": [
+            {"action": "turn", "label": "转向障碍物", "params": {"degrees": 15, "direction": "right"}, "reason": "对准长方体"},
+            {"action": "forward", "label": "接近障碍物", "params": {"distance_m": 1.8}, "reason": "沿通道接近"},
+            {"action": "stop", "label": "停止", "params": {}, "reason": "到达操作点"},
+            {"action": "push", "label": "搬离长方体", "params": {"target": "obstacle_box", "push_distance_m": 1.2}, "reason": "清空通道"},
+        ],
+    },
+}
+
+
 class UiDemoExecutor:
     """Runs the 10-step rescue flow for UI preview without vision libraries."""
 
@@ -66,6 +111,9 @@ class UiDemoExecutor:
         self._running = False
         self._cancel = False
         self._rtv_result = MOCK_RTV_RESULT
+
+    def _rtv_for(self, blueprint: TaskBlueprint) -> dict[str, Any]:
+        return MOCK_OBSTACLE_RTV_RESULT if blueprint.scenario == "obstacle" else MOCK_RTV_RESULT
 
     @property
     def is_running(self) -> bool:
@@ -81,6 +129,7 @@ class UiDemoExecutor:
         self._running = True
         self._cancel = False
         self.world.load_blueprint(blueprint)
+        self._rtv_result = self._rtv_for(blueprint)
         await broadcast({"type": "execution_start", "state": self.world.snapshot().model_dump()})
 
         steps = blueprint.steps
@@ -92,7 +141,7 @@ class UiDemoExecutor:
                     break
                 await self._run_phase(step.phase, index, len(steps), broadcast)
             if self.world.state.status == "running":
-                self.world.complete_rescue()
+                self.world.complete_mission()
                 await broadcast({"type": "rescue_complete", "state": self.world.snapshot().model_dump()})
         finally:
             self._running = False
@@ -136,12 +185,17 @@ class UiDemoExecutor:
         elif phase == RescuePhase.ROBOT_EXECUTE.value:
             await self._execute_actions(broadcast, duration)
         elif phase == RescuePhase.RESCUE_SUCCESS.value:
-            self.world.complete_rescue()
+            self.world.complete_mission()
             await broadcast({"type": "rescue_success", "state": self.world.snapshot().model_dump()})
         elif phase == RescuePhase.DISPLAY_RESULT.value:
+            msg = (
+                "长方体障碍物已搬离 (UI Demo)"
+                if self.world.state.scenario == "obstacle"
+                else "Mini Pi 已成功解救 (UI Demo)"
+            )
             await broadcast({
                 "type": "display_result",
-                "result": {"status": "success", "message": "Mini Pi 已成功解救 (UI Demo)"},
+                "result": {"status": "success", "message": msg},
                 "state": self.world.snapshot().model_dump(),
             })
 
@@ -153,7 +207,12 @@ class UiDemoExecutor:
         if not plan or not plan.actions:
             return
         per_action = duration / len(plan.actions)
-        waypoints = ROBOT_WAYPOINTS_RESCUE
+        waypoints = (
+            ROBOT_WAYPOINTS_OBSTACLE
+            if self.world.state.scenario == "obstacle"
+            else ROBOT_WAYPOINTS_RESCUE
+        )
+        push_point = waypoints.get("push_point", waypoints["home"])
         for action in plan.actions:
             if self._cancel:
                 return
@@ -165,7 +224,7 @@ class UiDemoExecutor:
                 "state": self.world.snapshot().model_dump(),
             })
             if action.action == RobotActionType.FORWARD:
-                await self._animate_robot(list(waypoints["home"]), list(waypoints["push_point"]), per_action * 0.6, broadcast)
+                await self._animate_robot(list(waypoints["home"]), list(push_point), per_action * 0.6, broadcast)
             else:
                 await asyncio.sleep(per_action * 0.4)
             action.status = "done"

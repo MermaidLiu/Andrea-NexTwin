@@ -185,6 +185,7 @@ function updateUI(state) {
   if (state.objects?.length) {
     scene3d.buildScene(state.objects, state.scene_label);
     state.objects.forEach(o => {
+      scene3d.updateObjectPosition(o.id, o.position);
       if (o.state === 'trapped') scene3d.updateObjectState(o.id, 'fault');
       if (o.state === 'rescued') scene3d.updateObjectState(o.id, 'rescued');
       if (o.state === 'cleared') scene3d.updateObjectState(o.id, 'cleared');

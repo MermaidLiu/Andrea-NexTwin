@@ -14,8 +14,9 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from nextwin import __version__
-from nextwin.config import RESCUE_DEFAULT_INSTRUCTION, WEB_DIR
+from nextwin.config import DEMO_SCENARIO, OBSTACLE_DEFAULT_INSTRUCTION, RESCUE_DEFAULT_INSTRUCTION, WEB_DIR
 from nextwin.models import ExecuteRequest, SystemStatus, TaskRequest, TaskResponse
+from nextwin.evacuation.models import ConfirmEvacuationRequest, StartEvacuationRequest
 from nextwin.runtime import Runtime
 from nextwin.task_parser import new_task_id, parse_instruction
 from nextwin.world_model import WorldModel
@@ -65,15 +66,23 @@ async def get_status():
 
 
 @app.get("/api/v1/demo/default")
-async def get_default():
-    return {"instruction": RESCUE_DEFAULT_INSTRUCTION}
+async def get_default(scenario: str | None = None):
+    active = scenario or DEMO_SCENARIO
+    if active == "obstacle":
+        return {"instruction": OBSTACLE_DEFAULT_INSTRUCTION, "scenario": "obstacle"}
+    return {"instruction": RESCUE_DEFAULT_INSTRUCTION, "scenario": "rescue"}
+
+
+@app.get("/api/v1/demo/obstacle")
+async def get_obstacle_demo():
+    return {"instruction": OBSTACLE_DEFAULT_INSTRUCTION, "scenario": "obstacle"}
 
 
 @app.post("/api/v1/task", response_model=TaskResponse)
 async def create_task(req: TaskRequest):
     global current_task_id
-    blueprint, mode = await parse_instruction(req.instruction)
-    current_task_id = new_task_id()
+    blueprint, mode = await parse_instruction(req.instruction, req.scene_override)
+    current_task_id = new_task_id(mode)
     world.load_blueprint(blueprint)
     await broadcast({"type": "task_created", "task_id": current_task_id, "state": world.snapshot().model_dump()})
     return TaskResponse(task_id=current_task_id, blueprint=blueprint, world_model=world.snapshot())
@@ -192,6 +201,59 @@ async def billing_plans():
 async def billing_usage():
     from nextwin.billing import get_usage_mock
     return get_usage_mock()
+
+
+# ── Evacuation workflow API ──
+
+@app.post("/api/v1/evacuation/start")
+async def evacuation_start(req: StartEvacuationRequest):
+    from nextwin.evacuation.exceptions import EvacuationWorkflowError
+    from nextwin.evacuation.store import evacuation_store
+    from nextwin.evacuation.workflow import EvacuationWorkflow
+
+    wf = EvacuationWorkflow()
+    try:
+        state = wf.start(
+            req.instruction,
+            world_model_id=req.world_model_id,
+            robot_id=req.robot_id,
+        )
+    except EvacuationWorkflowError as exc:
+        raise HTTPException(400, str(exc)) from exc
+    evacuation_store.create(wf)
+    await broadcast({"type": "evacuation_started", "session_id": state.session_id, "phase": state.phase.value})
+    return state.model_dump(mode="json")
+
+
+@app.get("/api/v1/evacuation/{session_id}")
+async def evacuation_get(session_id: str):
+    from nextwin.evacuation.store import evacuation_store
+
+    wf = evacuation_store.get(session_id)
+    if not wf or not wf.state:
+        raise HTTPException(404, "Session not found")
+    return wf.state.model_dump(mode="json")
+
+
+@app.post("/api/v1/evacuation/{session_id}/confirm")
+async def evacuation_confirm(session_id: str, req: ConfirmEvacuationRequest):
+    from nextwin.evacuation.exceptions import WorkflowStateError
+    from nextwin.evacuation.store import evacuation_store
+
+    wf = evacuation_store.get(session_id)
+    if not wf:
+        raise HTTPException(404, "Session not found")
+    try:
+        state = wf.confirm(approved=req.approved, feedback=req.feedback)
+    except WorkflowStateError as exc:
+        raise HTTPException(400, str(exc)) from exc
+    await broadcast({
+        "type": "evacuation_confirmed",
+        "session_id": session_id,
+        "approved": req.approved,
+        "phase": state.phase.value,
+    })
+    return state.model_dump(mode="json")
 
 
 # ── Developer portal API ──

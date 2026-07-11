@@ -15,6 +15,13 @@ RESCUE_DEFAULT_INSTRUCTION = (
     "通过 onboard 雷达+视觉感知找到被重物压住的 Mini Pi 并实施救援。"
 )
 
+OBSTACLE_DEFAULT_INSTRUCTION = (
+    "识别前方长方体障碍物，走过去将其搬离通道。"
+)
+
+# MVP 演示默认场景（可通过 NEXTWIN_DEMO_SCENARIO=rescue 切回救援）
+DEMO_SCENARIO = os.getenv("NEXTWIN_DEMO_SCENARIO", "obstacle")
+
 # Unitree G1 sensor defaults (Livox Mid360 + RealSense D435i)
 UNITREE_ROBOT_MODEL = os.getenv("UNITREE_ROBOT_MODEL", "g1")
 # ros2 | sdk | mock  — 默认 ros2，使用 G1 onboard 相机 + 雷达
@@ -71,6 +78,25 @@ ROBOT_WAYPOINTS_RESCUE = {
     "push_point": [-2.2, 0.0, -1.6],
     "mini_pi": [-2.5, 0.0, -1.8],
     "safe_zone": [3.0, 0.0, 2.0],
+}
+
+OBSTACLE_SCENE_OBJECTS = [
+    {"id": "unitree", "label": "宇树机器人", "type": "robot", "position": [0, 0, 0]},
+    {
+        "id": "obstacle_box",
+        "label": "长方体障碍物",
+        "type": "obstacle",
+        "position": [-2.0, 0.25, -1.5],
+        "metadata": {"shape": "box", "size": [0.6, 0.4, 0.5], "mass_kg": 8.0},
+    },
+    {"id": "path_zone", "label": "通道", "type": "zone", "position": [-1.0, 0, -0.8]},
+]
+
+ROBOT_WAYPOINTS_OBSTACLE = {
+    "home": [0.0, 0.0, 0.0],
+    "approach": [-1.2, 0.0, -1.0],
+    "push_point": [-1.8, 0.0, -1.4],
+    "clear_zone": [0.5, 0.0, 0.5],
 }
 
 # 4-view directions for ERP split

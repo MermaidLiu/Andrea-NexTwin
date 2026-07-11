@@ -4,6 +4,20 @@ const STEPS = ['scene', 'workflow', 'robot', 'worldmodel'];
 let currentStep = 0;
 let selectedRobot = null;
 let selectedWm = null;
+let evacuationSessionId = null;
+let evacuationState = null;
+
+const PHASE_ORDER = [
+  'phase_0_language_input',
+  'phase_1_scene_confirmation',
+  'phase_2_perimeter_judgment',
+  'phase_3_target_alignment',
+  'phase_4_output_validation',
+  'awaiting_confirmation',
+  'executing',
+  'completed',
+  'shelter_fallback',
+];
 
 const ROBOTS = [
   { id: 'g1', vendor: '宇树 Unitree', name: 'G1 人形', version: 'v2.1', type: 'humanoid', tags: ['救援', '巡检', 'ROS2'] },
@@ -55,6 +69,7 @@ const REALDATA = [
 
 function toast(msg) {
   const el = document.getElementById('toast');
+  if (!el) return;
   el.textContent = msg;
   el.classList.remove('hidden');
   setTimeout(() => el.classList.add('hidden'), 2800);
@@ -62,6 +77,7 @@ function toast(msg) {
 
 function log(msg) {
   const ul = document.getElementById('log-stream');
+  if (!ul) return;
   const time = new Date().toLocaleTimeString('zh-CN', { hour12: false });
   const li = document.createElement('li');
   li.innerHTML = `<span class="time">${time}</span>${msg}`;
@@ -78,27 +94,51 @@ function gotoStep(idx) {
   currentStep = Math.max(0, Math.min(STEPS.length - 1, idx));
   const stepId = STEPS[currentStep];
 
-  document.querySelectorAll('.ws-step').forEach((el, i) => {
-    el.classList.toggle('active', i === currentStep);
-    el.classList.toggle('done', i < currentStep);
+  document.querySelectorAll('#flow-steps .ws-step').forEach((el) => {
+    const stepIdx = STEPS.indexOf(el.dataset.step);
+    el.classList.toggle('active', stepIdx === currentStep);
+    el.classList.toggle('done', stepIdx >= 0 && stepIdx < currentStep);
+    el.setAttribute('aria-selected', stepIdx === currentStep ? 'true' : 'false');
+    el.closest('li')?.classList.toggle('done', stepIdx >= 0 && stepIdx < currentStep);
   });
-  document.querySelectorAll('.step-panel').forEach((p) => p.classList.remove('active'));
-  document.getElementById(`panel-${stepId}`)?.classList.add('active');
 
-  document.getElementById('btn-prev').disabled = currentStep === 0;
-  document.getElementById('btn-next').textContent = currentStep === STEPS.length - 1 ? '完成配置' : '下一步';
+  document.querySelectorAll('.step-panel').forEach((p) => {
+    p.classList.remove('active');
+    p.hidden = true;
+  });
+  const panel = document.getElementById(`panel-${stepId}`);
+  if (panel) {
+    panel.classList.add('active');
+    panel.hidden = false;
+  }
+
+  const prevBtn = document.getElementById('btn-prev');
+  const nextBtn = document.getElementById('btn-next');
+  if (prevBtn) prevBtn.disabled = currentStep === 0;
+  if (nextBtn) nextBtn.textContent = currentStep === STEPS.length - 1 ? '完成配置' : '下一步';
 
   const pct = ((currentStep + 1) / STEPS.length) * 100;
-  document.getElementById('progress-bar').style.width = `${pct}%`;
-  document.getElementById('progress-label').textContent = `步骤 ${currentStep + 1}/${STEPS.length}`;
+  const bar = document.getElementById('progress-bar');
+  const label = document.getElementById('progress-label');
+  if (bar) bar.style.width = `${pct}%`;
+  if (label) label.textContent = `步骤 ${currentStep + 1}/${STEPS.length}`;
 
+  const main = document.getElementById('ws-main');
+  if (main) main.scrollTop = 0;
+
+  if (currentStep === 1) requestAnimationFrame(drawFlowLines);
   if (currentStep >= 2) refreshEval();
 }
 
 function initSteps() {
-  document.querySelectorAll('.ws-step').forEach((el, i) => {
-    el.addEventListener('click', () => gotoStep(i));
+  const flow = document.getElementById('flow-steps');
+  flow?.addEventListener('click', (e) => {
+    const step = e.target.closest('.ws-step');
+    if (!step?.dataset.step) return;
+    const idx = STEPS.indexOf(step.dataset.step);
+    if (idx >= 0) gotoStep(idx);
   });
+
   document.getElementById('btn-prev')?.addEventListener('click', () => gotoStep(currentStep - 1));
   document.getElementById('btn-next')?.addEventListener('click', () => {
     if (currentStep === STEPS.length - 1) {
@@ -123,13 +163,151 @@ function initScene() {
     if (!text) { toast('请先描述你的任务'); return; }
     setStatus('解析中');
     log(`收到任务描述: ${text.slice(0, 40)}…`);
-    setTimeout(() => {
-      setStatus('已解析');
-      toast('小星已理解任务，可继续配置工作流');
-      log('任务解析完成，生成 10 步蓝图');
-      gotoStep(1);
-    }, 600);
+    gotoStep(1);
+    runEvacuationPipeline(text);
   });
+}
+
+// ── Evacuation workflow API ──
+function riskColor(risk, isNoGo) {
+  if (isNoGo || risk >= 0.72) return '#F53F3F';
+  if (risk >= 0.4) return '#FF7D00';
+  return '#00B42A';
+}
+
+function updateEvacPipeline(phase) {
+  const idx = PHASE_ORDER.indexOf(phase);
+  document.querySelectorAll('.evac-phase').forEach((el) => {
+    const pIdx = PHASE_ORDER.indexOf(el.dataset.phase);
+    el.classList.toggle('active', el.dataset.phase === phase);
+    el.classList.toggle('done', pIdx >= 0 && pIdx < idx && phase !== 'shelter_fallback');
+    el.classList.toggle('fallback', phase === 'shelter_fallback' && el.dataset.phase === 'phase_2_perimeter_judgment');
+  });
+}
+
+function renderEvacuationState(state) {
+  evacuationState = state;
+  updateEvacPipeline(state.phase);
+
+  const grid = document.getElementById('risk-grid');
+  if (grid && state.perimeter_map?.risk_grid) {
+    const cells = state.perimeter_map.risk_grid;
+    const w = state.perimeter_map.grid_width || 8;
+    grid.style.gridTemplateColumns = `repeat(${w}, 1fr)`;
+    grid.innerHTML = cells.map((c) =>
+      `<div class="risk-cell" style="background:${riskColor(c.risk, c.is_no_go)}" title="(${c.x},${c.y}) risk=${c.risk}"></div>`
+    ).join('');
+  }
+
+  const actions = state.action_plan?.actions || [];
+  const actionList = document.getElementById('action-list');
+  if (actionList) {
+    actionList.innerHTML = actions.length
+      ? actions.map((a) => `<li><strong>${a.label}</strong> <span class="muted">P${a.priority}</span><br><small>${a.reason}</small></li>`).join('')
+      : '<li class="muted">备用协议 — 无外出动作</li>';
+  }
+
+  const path = state.output?.optimal_path?.waypoints || [];
+  const pathList = document.getElementById('path-list');
+  if (pathList) {
+    pathList.innerHTML = path.length
+      ? path.map((wp) => `<li>${wp.label || 'waypoint'} (${wp.x}, ${wp.z})</li>`).join('')
+      : '<li class="muted">—</li>';
+  }
+
+  const solutions = state.output?.solution_steps || [];
+  const solList = document.getElementById('solution-list');
+  if (solList) {
+    solList.innerHTML = solutions.length
+      ? solutions.map((s) => `<li>${s}</li>`).join('')
+      : '<li class="muted">—</li>';
+  }
+
+  const rationale = document.getElementById('wm-rationale');
+  if (rationale) {
+    rationale.textContent = state.output?.world_model_rationale || '—';
+    rationale.classList.toggle('muted', !state.output?.world_model_rationale);
+  }
+
+  const gate = document.getElementById('evac-gate');
+  const statusEl = document.getElementById('evac-status');
+  if (gate) {
+    gate.classList.toggle('hidden', state.phase !== 'awaiting_confirmation');
+  }
+  if (statusEl) {
+    statusEl.className = 'evac-status';
+    if (state.phase === 'completed') {
+      statusEl.classList.add('success');
+      statusEl.textContent = '✓ 方案已确认，进入执行阶段（模拟完成）';
+    } else if (state.fallback_protocol) {
+      statusEl.classList.add('warn');
+      statusEl.textContent = `⚠ 已降级至 ${state.fallback_protocol}，等待确认`;
+    } else if (state.phase === 'awaiting_confirmation') {
+      statusEl.textContent = `Session ${state.session_id?.slice(0, 8)}… — 等待 Y/N 确认`;
+    } else {
+      statusEl.textContent = `当前阶段: ${state.phase}`;
+    }
+  }
+
+  (state.logs || []).slice(-6).forEach((line) => {
+    if (!line.startsWith('[Gate]')) log(line);
+  });
+}
+
+async function runEvacuationPipeline(instruction) {
+  setStatus('推演中');
+  log('[Evacuation] 启动 5 阶段工作流…');
+  try {
+    const body = {
+      instruction,
+      robot_id: selectedRobot,
+      world_model_id: selectedWm,
+    };
+    const res = await fetch('/api/v1/evacuation/start', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    const state = await res.json();
+    evacuationSessionId = state.session_id;
+    renderEvacuationState(state);
+    setStatus(state.fallback_protocol ? '掩体避险' : '等待确认');
+    toast(state.fallback_protocol ? '无法找到安全路径，已启用备用协议' : '推演完成，请确认方案');
+    log(`[Evacuation] 推演完成 phase=${state.phase}`);
+  } catch (err) {
+    setStatus('推演失败');
+    toast('工作流推演失败');
+    log(`[Evacuation] 错误: ${err.message}`);
+  }
+}
+
+async function confirmEvacuation(approved) {
+  if (!evacuationSessionId) { toast('请先运行推演'); return; }
+  const feedback = document.getElementById('evac-feedback')?.value.trim() || '';
+  try {
+    const res = await fetch(`/api/v1/evacuation/${evacuationSessionId}/confirm`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ approved, feedback }),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    const state = await res.json();
+    renderEvacuationState(state);
+    if (approved) {
+      setStatus('已执行');
+      toast('方案已确认并执行');
+      log('[Gate] 用户确认 Y');
+    } else {
+      setStatus('重新推演');
+      toast('已拒绝，重新从阶段 1 推演');
+      log(`[Gate] 用户拒绝 N${feedback ? `: ${feedback}` : ''}`);
+      document.getElementById('evac-feedback').value = '';
+    }
+  } catch (err) {
+    toast('确认失败');
+    log(`[Evacuation] 确认错误: ${err.message}`);
+  }
 }
 
 // ── Workflow canvas ──
@@ -191,22 +369,14 @@ function initWorkflow() {
   window.addEventListener('resize', drawFlowLines);
   initWorkflowDrag();
 
-  document.getElementById('btn-auto-flow')?.addEventListener('click', () => {
-    log('工作流已根据任务描述自动生成');
-    toast('工作流已自动生成');
-    drawFlowLines();
+  document.getElementById('btn-run-evacuation')?.addEventListener('click', () => {
+    const text = document.getElementById('scene-prompt')?.value.trim();
+    if (!text) { toast('请先在步骤 1 输入任务描述'); return; }
+    runEvacuationPipeline(text);
   });
 
-  document.getElementById('btn-add-node')?.addEventListener('click', () => {
-    toast('从下方面板选择要添加的节点类型');
-  });
-
-  document.querySelectorAll('#node-palette button').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      log(`添加节点: ${btn.textContent}`);
-      toast(`已添加 ${btn.textContent} 节点`);
-    });
-  });
+  document.getElementById('btn-evac-y')?.addEventListener('click', () => confirmEvacuation(true));
+  document.getElementById('btn-evac-n')?.addEventListener('click', () => confirmEvacuation(false));
 }
 
 // ── Robot cards ──

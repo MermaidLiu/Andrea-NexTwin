@@ -13,6 +13,7 @@ from nextwin.config import ROOT_DIR, YOLO_CONF, YOLO_DEVICE, YOLO_MODEL, YOLO_EN
 RESCUE_TARGETS = {
     "mini_pi": {"label": "Mini Pi (被压)", "priority": 1, "color": "#f97316", "is_target": True},
     "heavy_debris": {"label": "重物", "priority": 2, "color": "#64748b", "is_target": False},
+    "obstacle_box": {"label": "长方体障碍物", "priority": 1, "color": "#eab308", "is_target": True},
     "person": {"label": "人员", "priority": 1, "color": "#ef4444", "is_target": True},
 }
 
@@ -24,13 +25,21 @@ CLASS_ALIASES = {
     "heavy_debris": "heavy_debris",
     "heavy debris": "heavy_debris",
     "debris": "heavy_debris",
+    "obstacle_box": "obstacle_box",
+    "obstacle box": "obstacle_box",
+    "box": "obstacle_box",
     "person": "person",
 }
 
 # COCO yolov8n 演示映射 — 无「纸盒」类，用近义物代替
 # Mini Pi 替身：小方块/手机；重物替身：行李箱/椅子/背包等
 COCO_DEMO_ALIASES = {
-    # → Mini Pi（被压目标）
+    # → 障碍物 MVP（长方体）
+    "suitcase": "obstacle_box",
+    "book": "obstacle_box",
+    "handbag": "obstacle_box",
+    "chair": "obstacle_box",
+    # → Mini Pi / 重物（救援）
     "cell phone": "mini_pi",
     "cell_phone": "mini_pi",
     "book": "mini_pi",
@@ -39,7 +48,6 @@ COCO_DEMO_ALIASES = {
     "laptop": "mini_pi",
     "keyboard": "mini_pi",
     # → 重物（压住目标的物体）
-    "suitcase": "heavy_debris",      # 最接近「箱子/纸盒」
     "backpack": "heavy_debris",
     "handbag": "heavy_debris",
     "chair": "heavy_debris",
@@ -65,6 +73,7 @@ class YOLODetector:
         self._model = None
         self._available: bool | None = None
         self._init_error = ""
+        self.scenario: str = "rescue"
 
     @staticmethod
     def _resolve_model_path(path: str) -> str:
@@ -117,7 +126,7 @@ class YOLODetector:
         self._ensure_model()
         if self._available and self._model:
             return self._detect_yolo(image)
-        return self._detect_mock(image)
+        return self._detect_mock(image, self.scenario)
 
     def _normalize_class(self, cls_name: str) -> str:
         key = cls_name.lower().strip().replace("-", "_")
@@ -164,12 +173,25 @@ class YOLODetector:
                 })
         return detections
 
-    def _detect_mock(self, image: np.ndarray) -> list[dict[str, Any]]:
+    def _detect_mock(self, image: np.ndarray, scenario: str = "rescue") -> list[dict[str, Any]]:
         """Fallback when YOLO unavailable (no G1 / no weights)."""
         h, w = image.shape[:2]
+        detections: list[dict[str, Any]] = []
+
+        if scenario == "obstacle":
+            detections.append({
+                "class": "obstacle_box",
+                "label": "长方体障碍物",
+                "confidence": 0.91,
+                "bbox": [w * 0.32, h * 0.38, w * 0.68, h * 0.78],
+                "color": "#eab308",
+                "is_target": True,
+                "priority": 1,
+            })
+            return detections
+
         orange_ratio = np.mean((image[:, :, 0] > 180) & (image[:, :, 1] > 100) & (image[:, :, 2] < 100))
         gray_ratio = np.mean((image[:, :, 0] > 70) & (image[:, :, 0] < 110))
-        detections: list[dict[str, Any]] = []
         if orange_ratio > 0.02:
             detections.append({
                 "class": "mini_pi",
@@ -191,6 +213,20 @@ class YOLODetector:
                 "priority": 2,
             })
         return detections
+
+    def find_target(
+        self, all_detections: list[dict[str, Any]], scenario: str = "rescue"
+    ) -> tuple[str, dict[str, Any] | None]:
+        if scenario == "obstacle":
+            for d in all_detections:
+                if d.get("class") == "obstacle_box":
+                    return d.get("view", "front"), d
+            for d in all_detections:
+                if d.get("is_target"):
+                    return d.get("view", "front"), d
+            return "front", None
+
+        return self.find_rescue_target(all_detections)
 
     def find_rescue_target(self, all_detections: list[dict[str, Any]]) -> tuple[str, dict[str, Any] | None]:
         # 优先 Mini Pi，其次其他 is_target（如 person）

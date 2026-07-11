@@ -4,8 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>工作台 · NexTwin Studio</title>
-  <link rel="stylesheet" href="/static/css/tokens.css" />
-  <link rel="stylesheet" href="/static/css/workspace.css" />
+  <link rel="stylesheet" href="/static/css/tokens.css?v=3" />
+  <link rel="stylesheet" href="/static/css/workspace.css?v=4" />
 </head>
 <body class="workspace">
 
@@ -29,22 +29,30 @@
 
   <!-- 横向步骤条 -->
   <div class="ws-stepper-bar">
-    <ol class="ws-stepper" id="flow-steps">
-      <li class="ws-step active" data-step="scene">
-        <span class="ws-step-icon">1</span>
-        <div class="ws-step-text"><strong>新建场景</strong><span>描述任务</span></div>
+    <ol class="ws-stepper" id="flow-steps" role="tablist">
+      <li role="presentation">
+        <button type="button" class="ws-step active" data-step="scene" role="tab" aria-selected="true">
+          <span class="ws-step-icon">1</span>
+          <div class="ws-step-text"><strong>新建场景</strong><span>描述任务</span></div>
+        </button>
       </li>
-      <li class="ws-step" data-step="workflow">
-        <span class="ws-step-icon">2</span>
-        <div class="ws-step-text"><strong>工作流</strong><span>编排逻辑</span></div>
+      <li role="presentation">
+        <button type="button" class="ws-step" data-step="workflow" role="tab" aria-selected="false">
+          <span class="ws-step-icon">2</span>
+          <div class="ws-step-text"><strong>工作流</strong><span>编排逻辑</span></div>
+        </button>
       </li>
-      <li class="ws-step" data-step="robot">
-        <span class="ws-step-icon">3</span>
-        <div class="ws-step-text"><strong>机器人</strong><span>选择设备</span></div>
+      <li role="presentation">
+        <button type="button" class="ws-step" data-step="robot" role="tab" aria-selected="false">
+          <span class="ws-step-icon">3</span>
+          <div class="ws-step-text"><strong>机器人</strong><span>选择设备</span></div>
+        </button>
       </li>
-      <li class="ws-step" data-step="worldmodel">
-        <span class="ws-step-icon">4</span>
-        <div class="ws-step-text"><strong>世界模型</strong><span>匹配场景</span></div>
+      <li role="presentation">
+        <button type="button" class="ws-step" data-step="worldmodel" role="tab" aria-selected="false">
+          <span class="ws-step-icon">4</span>
+          <div class="ws-step-text"><strong>世界模型</strong><span>匹配场景</span></div>
+        </button>
       </li>
     </ol>
     <div class="ws-stepper-actions">
@@ -77,9 +85,11 @@
           <div class="scene-right">
             <label class="input-label">任务描述</label>
             <div class="gemini-input">
-              <textarea id="scene-prompt" rows="5" placeholder="例如：在坍塌现场找到被压住的 Mini Pi，规划救援路径并推动障碍物…"></textarea>
+              <textarea id="scene-prompt" rows="3" placeholder="例如：在坍塌现场找到被压住的 Mini Pi，规划救援路径并推动障碍物…"></textarea>
               <div class="gemini-toolbar">
                 <div class="gemini-hints">
+                  <button type="button" class="hint-chip" data-hint="厨房起火了，烟雾越来越大，请带我安全逃生。">🔥 安全逃生</button>
+                  <button type="button" class="hint-chip" data-hint="识别前方长方体障碍物，走过去将其搬离通道">📦 搬离障碍</button>
                   <button type="button" class="hint-chip" data-hint="无人救援：找到被困目标并实施救援">🚨 无人救援</button>
                   <button type="button" class="hint-chip" data-hint="巡检 A 区设备，识别异常并上报">🔍 智慧巡检</button>
                   <button type="button" class="hint-chip" data-hint="维护工位：检测损坏零件并打印替换件">🔧 工业维护</button>
@@ -92,51 +102,109 @@
       </section>
 
       <!-- Step 2 -->
-      <section class="step-panel" id="panel-workflow">
-        <div class="panel-card">
+      <section class="step-panel" id="panel-workflow" hidden>
+        <div class="panel-card evac-layout">
           <div class="panel-head">
             <div>
-              <h2>工作流搭建</h2>
-              <p>拖拽节点、连接逻辑，自定义具身智能流水线</p>
+              <h2>应急救援工作流</h2>
+              <p>5 阶段流水线：语言输入 → 场景确认 → 周界判断 → 目标确认 → 输出确认</p>
             </div>
             <div class="panel-tools">
-              <button type="button" class="btn-brand btn-ghost-light btn-sm" id="btn-add-node">+ 添加节点</button>
-              <button type="button" class="btn-brand btn-secondary btn-sm" id="btn-auto-flow">自动生成</button>
+              <button type="button" class="btn-brand btn-secondary btn-sm" id="btn-run-evacuation">运行推演</button>
             </div>
           </div>
-          <div class="coze-canvas" id="coze-canvas">
-            <svg class="flow-lines" id="flow-lines"></svg>
-            <div class="wf-node start" data-id="n1" style="left:48px;top:100px">
-              <span class="wf-icon">🗣️</span><strong>语言输入</strong><small>用户指令</small>
+
+          <!-- 5-phase stepper -->
+          <ol class="evac-pipeline" id="evac-pipeline">
+            <li class="evac-phase" data-phase="phase_0_language_input">
+              <span class="evac-phase-num">0</span>
+              <div><strong>语言输入</strong><small>解析指令实体</small></div>
+            </li>
+            <li class="evac-phase" data-phase="phase_1_scene_confirmation">
+              <span class="evac-phase-num">1</span>
+              <div><strong>场景确认</strong><small>安全逃生对齐</small></div>
+            </li>
+            <li class="evac-phase" data-phase="phase_2_perimeter_judgment">
+              <span class="evac-phase-num">2</span>
+              <div><strong>周界判断</strong><small>世界模型预测</small></div>
+            </li>
+            <li class="evac-phase" data-phase="phase_3_target_alignment">
+              <span class="evac-phase-num">3</span>
+              <div><strong>目标确认</strong><small>具身智能规划</small></div>
+            </li>
+            <li class="evac-phase" data-phase="phase_4_output_validation">
+              <span class="evac-phase-num">4</span>
+              <div><strong>输出确认</strong><small>路径与方案</small></div>
+            </li>
+          </ol>
+
+          <div class="evac-body">
+            <div class="evac-left">
+              <div class="evac-section">
+                <h3>风险系数网格</h3>
+                <div class="risk-grid" id="risk-grid"></div>
+                <p class="risk-legend"><span class="lg-safe">低</span><span class="lg-mid">中</span><span class="lg-high">禁行</span></p>
+              </div>
+              <div class="evac-section">
+                <h3>动作规划序列</h3>
+                <ul class="action-list" id="action-list"><li class="muted">运行推演后显示</li></ul>
+              </div>
             </div>
-            <div class="wf-node" data-id="n2" style="left:240px;top:80px">
-              <span class="wf-icon">🧠</span><strong>任务解析</strong><small>LLM / 规则</small>
-            </div>
-            <div class="wf-node" data-id="n3" style="left:432px;top:100px">
-              <span class="wf-icon">🌐</span><strong>世界模型</strong><small>物理仿真</small>
-            </div>
-            <div class="wf-node" data-id="n4" style="left:624px;top:48px">
-              <span class="wf-icon">👁️</span><strong>感知</strong><small>LiDAR + 视觉</small>
-            </div>
-            <div class="wf-node" data-id="n5" style="left:624px;top:180px">
-              <span class="wf-icon">⚙️</span><strong>规则引擎</strong><small>动作规划</small>
-            </div>
-            <div class="wf-node end" data-id="n6" style="left:816px;top:110px">
-              <span class="wf-icon">🦾</span><strong>机器人执行</strong><small>真机 / 仿真</small>
+            <div class="evac-right">
+              <div class="evac-section">
+                <h3>最优路径</h3>
+                <ol class="path-list" id="path-list"><li class="muted">—</li></ol>
+              </div>
+              <div class="evac-section">
+                <h3>解决方案</h3>
+                <ul class="solution-list" id="solution-list"><li class="muted">—</li></ul>
+              </div>
+              <div class="evac-section rationale-box">
+                <h3>世界模型推演依据</h3>
+                <p id="wm-rationale" class="muted">—</p>
+              </div>
+              <div class="evac-gate hidden" id="evac-gate">
+                <p>确认执行该逃生方案？</p>
+                <div class="gate-actions">
+                  <button type="button" class="btn-brand btn-primary btn-sm" id="btn-evac-y">确认 (Y)</button>
+                  <button type="button" class="btn-brand btn-ghost-light btn-sm" id="btn-evac-n">拒绝 (N)</button>
+                </div>
+                <textarea id="evac-feedback" rows="2" placeholder="拒绝时可填写修改意见…"></textarea>
+              </div>
+              <div class="evac-status" id="evac-status"></div>
             </div>
           </div>
-          <div class="node-palette" id="node-palette">
-            <span class="palette-label">可添加</span>
-            <button type="button" data-type="yolo">YOLO 检测</button>
-            <button type="button" data-type="lidar">LiDAR 融合</button>
-            <button type="button" data-type="branch">条件分支</button>
-            <button type="button" data-type="api">API 回调</button>
-          </div>
+
+          <!-- Legacy canvas (collapsed) -->
+          <details class="legacy-flow">
+            <summary>经典节点编排视图</summary>
+            <div class="coze-canvas" id="coze-canvas">
+              <svg class="flow-lines" id="flow-lines"></svg>
+              <div class="wf-node start" data-id="n1" style="left:48px;top:100px">
+                <span class="wf-icon">🗣️</span><strong>语言输入</strong><small>用户指令</small>
+              </div>
+              <div class="wf-node" data-id="n2" style="left:240px;top:80px">
+                <span class="wf-icon">🧠</span><strong>任务解析</strong><small>LLM / 规则</small>
+              </div>
+              <div class="wf-node" data-id="n3" style="left:432px;top:100px">
+                <span class="wf-icon">🌐</span><strong>世界模型</strong><small>物理仿真</small>
+              </div>
+              <div class="wf-node" data-id="n4" style="left:624px;top:48px">
+                <span class="wf-icon">👁️</span><strong>感知</strong><small>LiDAR + 视觉</small>
+              </div>
+              <div class="wf-node" data-id="n5" style="left:624px;top:180px">
+                <span class="wf-icon">⚙️</span><strong>规则引擎</strong><small>动作规划</small>
+              </div>
+              <div class="wf-node end" data-id="n6" style="left:816px;top:110px">
+                <span class="wf-icon">🦾</span><strong>机器人执行</strong><small>真机 / 仿真</small>
+              </div>
+            </div>
+          </details>
         </div>
       </section>
 
       <!-- Step 3 -->
-      <section class="step-panel" id="panel-robot">
+      <section class="step-panel" id="panel-robot" hidden>
         <div class="panel-card">
           <div class="panel-head">
             <div>
@@ -155,7 +223,7 @@
       </section>
 
       <!-- Step 4 -->
-      <section class="step-panel" id="panel-worldmodel">
+      <section class="step-panel" id="panel-worldmodel" hidden>
         <div class="panel-card">
           <div class="panel-head">
             <div>
@@ -215,6 +283,6 @@
   </footer>
 
   <div class="toast hidden" id="toast"></div>
-  <script src="/static/js/workspace.js"></script>
+  <script src="/static/js/workspace.js?v=4"></script>
 </body>
 </html>
