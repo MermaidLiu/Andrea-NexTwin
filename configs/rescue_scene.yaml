@@ -1,0 +1,35 @@
+scene: rescue_mini_pi
+scenario: rescue
+robot: Unitree G1
+
+flow:
+  - issue_command
+  - robot_start
+  - unitree_sensing
+  - split_views
+  - yolo_detect
+  - observation_json
+  - rule_engine
+  - robot_execute
+  - rescue_success
+  - display_result
+
+g1:
+  lidar: Livox Mid360
+  lidar_topic: /utlidar/cloud
+  imu_topic: /utlidar/imu
+  camera: Intel RealSense D435i
+  camera_topic: /camera/color/image_raw
+  depth_topic: /camera/depth/image_rect_raw
+  ros2_setup: ~/unitree_ros2/setup.sh
+  control: example/g1/lowlevel/g1_low_level_example
+
+yolo_targets:
+  - mini_pi
+  - heavy_debris
+
+rule_engine_actions:
+  - turn
+  - forward
+  - stop
+  - push

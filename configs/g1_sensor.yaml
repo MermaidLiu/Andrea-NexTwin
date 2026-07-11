@@ -1,0 +1,35 @@
+# Unitree G1 传感器配置 (Livox Mid360 + RealSense D435i)
+
+robot_model: g1
+
+sensor:
+  mode: mock          # mock | ros2 | sdk
+  timeout_sec: 5.0
+  network_iface: eth0  # SDK2 直连网口名
+
+ros2:
+  # G1 官方话题 (source ~/unitree_ros2/setup.sh 后可见)
+  lidar_topic: /utlidar/cloud
+  lidar_frame: utlidar_lidar
+  imu_topic: /utlidar/imu
+  camera_topic: /camera/color/image_raw
+  depth_topic: /camera/depth/image_rect_raw
+  lowstate_topic: /lowstate
+
+control:
+  mode: mock          # mock | ros2
+  sdk: unitree_ros2
+  example: example/g1/lowlevel/g1_low_level_example
+
+launch:
+  # G1 onboard 常用启动命令
+  dds_setup: "cd ~/unitree_ros2 && source setup.sh"
+  realsense: "ros2 launch realsense2_camera rs_launch.py depth_module.depth_profile:=1280x720x30 pointcloud.enable:=true"
+  verify: "ros2 topic list | grep -E 'utlidar|camera'"
+
+nexwin:
+  env: |
+    export UNITREE_SENSOR_MODE=ros2
+    export UNITREE_ROBOT_MODEL=g1
+    export UNITREE_LIDAR_TOPIC=/utlidar/cloud
+    export UNITREE_CAMERA_TOPIC=/camera/color/image_raw

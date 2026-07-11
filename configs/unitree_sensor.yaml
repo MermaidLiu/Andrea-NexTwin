@@ -1,0 +1,29 @@
+# Unitree UniLiDAR + Vision 接入配置
+
+sensor:
+  mode: mock          # mock | ros2
+  timeout_sec: 3.0
+
+ros2:
+  lidar_topic: unilidar/cloud      # Unitree L1/L2 官方话题
+  imu_topic: unilidar/imu
+  camera_topic: unitree/camera/image_raw   # 或 Go2: /frontvideostream (需转换)
+
+# Go2 相机说明:
+#   /frontvideostream 为 unitree_go/msg/Go2FrontVideoData
+#   建议用 unitree_sdk2_python 或 go2_ros2_sdk 转为 sensor_msgs/Image 后订阅
+
+lidar:
+  model: UniLiDAR L2
+  sdk: https://github.com/unitreerobotics/unilidar_sdk2
+  split: [front, right, back, left]
+
+vision:
+  source: onboard_camera
+  merge_front_with_lidar: true
+
+yolo:
+  enable: false     # 设置 NEXTWIN_ENABLE_YOLO=1 启用真机模型
+  targets:
+    - mini_pi
+    - heavy_debris

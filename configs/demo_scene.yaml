@@ -1,0 +1,43 @@
+scene: robot_maintenance_station
+scene_label: 机器人零部件自维护数字孪生工位
+
+objects:
+  - id: robot
+    label: 宇树机器人
+    type: robot
+    position: [0, 0, 0]
+  - id: workbench
+    label: 工位桌
+    type: furniture
+    position: [2, 0, -1]
+  - id: spare_parts_shelf
+    label: 备件货架
+    type: furniture
+    position: [-2, 0, 2]
+  - id: inspection_area
+    label: A区巡检点
+    type: zone
+    position: [-3.5, 0, -2]
+  - id: fault_part
+    label: 异常夹具模块
+    type: part
+    position: [-3.8, 0.8, -2.2]
+  - id: printer_3d
+    label: 3D打印机
+    type: equipment
+    position: [3.5, 0, 1.5]
+
+robot_waypoints:
+  home: [0, 0, 0]
+  patrol: [-3.5, 0, -2]
+  printer: [3.5, 0, 1.5]
+
+replacement_parts:
+  - id: gear_spacer_v1.stl
+    label: 齿轮垫片
+  - id: maintenance_gear_v1.stl
+    label: 维护齿轮
+  - id: clip_fastener_v1.stl
+    label: 卡扣紧固件
+  - id: shell_cover_v1.stl
+    label: 外壳保护片

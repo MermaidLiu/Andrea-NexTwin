@@ -1,460 +1,287 @@
+# NexTwin 星孪 — 面向人形机器人的物理世界模型与语言驱动执行系统
+
 <div align="center">
 
-# 🤖 Andrea-NexTwin
+# ⬡ Andrea-NexTwin
 
-### 下一代具身智能数字孪生平台 · Next-Generation Embodied AI Digital Twin Platform
+**让机器人看懂世界，听懂任务，并在真实空间中行动**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)](https://python.org)
+[![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![ROS2](https://img.shields.io/badge/ROS2-Humble-22314E?logo=ros&logoColor=white)](https://docs.ros.org)
-[![PyTorch](https://img.shields.io/badge/PyTorch-2.0+-EE4C2C?logo=pytorch&logoColor=white)](https://pytorch.org)
-[![Status](https://img.shields.io/badge/Status-Active%20Development-brightgreen)]()
+[![Three.js](https://img.shields.io/badge/Three.js-3D_Digital_Twin-black?logo=three.js)](https://threejs.org)
 
-**用自然语言驱动数字孪生仿真，安全迁移至真实机器人执行**
-
-*Drive digital twin simulation with natural language, safely deploy to real robots*
-
-[Demo 视频](#-demo-视频) · [快速开始](#-快速开始) · [架构图](#️-架构图) · [API 示例](#-api-示例) · [Roadmap](#-roadmap)
-
----
+[Demo 视频](#-demo-视频) · [快速开始](#-快速开始) · [架构图](#️-架构图) · [API 示例](#-api-示例)
 
 </div>
-
-## 📖 目录
-
-- [项目名称](#-项目名称)
-- [一句话介绍](#-一句话介绍)
-- [Demo 视频](#-demo-视频)
-- [架构图](#️-架构图)
-- [快速开始](#-快速开始)
-- [技术栈](#-技术栈)
-- [文件结构](#-文件结构)
-- [API 示例](#-api-示例)
-- [Prompt 示例](#-prompt-示例)
-- [Roadmap](#-roadmap)
-- [Team](#-team)
-- [License](#-license)
 
 ---
 
 ## 📌 项目名称
 
-**Andrea-NexTwin** — 具身智能数字孪生协同执行框架
-
-> Andrea：面向真实场景的人机协作智能体  
-> NexTwin：**N**ext-generation **Ex**ecution via Digital **Twin**
-
----
+**Andrea-NexTwin（NexTwin 星孪）** — 面向人形机器人的物理世界模型与语言驱动执行系统
 
 ## 💡 一句话介绍
 
-> **Andrea-NexTwin 让用户用一句自然语言描述任务，系统自动在数字孪生环境中规划、仿真验证并执行，再将验证过的动作安全部署到真实机器人。**
-
----
+> **NexTwin 给机器人一个可执行的物理世界模型，让机器人看懂现场、听懂任务，并在真实空间中行动。**
 
 ## 🎬 Demo 视频
 
-> ⚠️ Demo 视频需展示**真实运行**画面（非 PPT / 概念片），必须包含：用户输入 → 系统响应 → 仿真/真机执行 → 结果反馈。
-
-<!-- 将下方链接替换为你的 Demo 视频 URL（B站 / YouTube / 飞书等） -->
 [![Demo Video](https://img.shields.io/badge/▶_Demo-点击观看-red?style=for-the-badge&logo=youtube)](https://your-demo-video-url-here)
 
-| 场景 | 用户输入 | 执行结果 |
-|------|----------|----------|
-| 桌面抓取 | *"把红色方块放到蓝色托盘里"* | ✅ 仿真通过 → 真机执行成功 |
-| 导航避障 | *"去厨房，避开地上的障碍物"* | ✅ 路径规划 + 安全到达 |
-| 多步任务 | *"先打开抽屉，再把工具放进去"* | ✅ 任务分解 + 顺序执行 |
+**Demo 主题：宇树 G1 无人救援 — 10 步闭环**
 
-<details>
-<summary>📋 Demo 视频拍摄清单（比赛要求）</summary>
-
-- [ ] 用户输入一句话（屏幕录制可见）
-- [ ] 系统实时响应（规划 / 推理过程）
-- [ ] 数字孪生仿真画面
-- [ ] 真实机器人执行画面（如有硬件）
-- [ ] 任务完成结果展示
-- [ ] 总时长建议 2–5 分钟
-
-</details>
-
----
+用户下达救援指令 → G1 启动 → Livox 雷达 + RealSense 视觉感知 → 四向切分 → YOLO 识别被压 Mini Pi → 观察 JSON → 规则引擎规划 → 机器人转向/前进/推重物 → 救援成功 → 大屏展示
 
 ## 🏗️ 架构图
 
 ```mermaid
 flowchart TB
-    subgraph Input["🗣️ 用户交互层"]
-        UI["Web / CLI 界面"]
-        NL["自然语言指令"]
+    subgraph Input["🗣️ 用户交互"]
+        UI["NexTwin Studio 大屏控制台"]
+        NL["自然语言救援指令"]
     end
 
     subgraph Brain["🧠 认知规划层"]
-        LLM["大语言模型<br/>任务理解与分解"]
-        VLA["VLA 视觉-语言-动作模型"]
-        Planner["动作序列规划器"]
+        LLM["LLM / 规则任务解析"]
+        TG["10 步救援蓝图"]
+        WM["物理世界模型"]
+    end
+
+    subgraph Sense["📡 G1 感知层"]
+        LIDAR["Livox Mid360<br/>/utlidar/cloud"]
+        CAM["RealSense D435i<br/>/camera/color/image_raw"]
+        RTV["RTV 四向切分 + YOLO"]
     end
 
     subgraph Twin["🌐 数字孪生层"]
-        Sim["物理仿真引擎<br/>(Isaac Sim / Gazebo)"]
-        Scene["场景与物体建模"]
-        Verify["安全验证 & 碰撞检测"]
+        H3D["Three.js 3D 场景"]
+        BEV["LiDAR 鸟瞰图"]
+        V4["四象限视觉视图"]
     end
 
     subgraph Exec["🦾 执行层"]
-        Bridge["Sim-to-Real 迁移桥"]
-        ROS["ROS2 控制节点"]
-        Robot["真实机器人<br/>(机械臂 / 移动底盘)"]
+        OBS["观察结果 JSON"]
+        RULE["规则引擎"]
+        G1["宇树 G1 动作<br/>转向·前进·停止·推重物"]
     end
 
-    subgraph Feedback["📡 感知反馈层"]
-        Cam["RGB-D 相机"]
-        State["机器人状态估计"]
-        Monitor["执行监控 & 异常回退"]
-    end
-
-    UI --> NL --> LLM
-    LLM --> Planner
-    Cam --> VLA --> Planner
-    Planner --> Sim
-    Sim --> Scene --> Verify
-    Verify -->|"✅ 验证通过"| Bridge
-    Bridge --> ROS --> Robot
-    Robot --> State --> Monitor
-    Monitor -->|"🔄 闭环修正"| Planner
-
-    style Input fill:#e3f2fd,stroke:#1565c0
-    style Brain fill:#f3e5f5,stroke:#7b1fa2
-    style Twin fill:#e8f5e9,stroke:#2e7d32
-    style Exec fill:#fff3e0,stroke:#ef6c00
-    style Feedback fill:#fce4ec,stroke:#c62828
+    UI --> NL --> LLM --> TG
+    TG --> WM --> H3D
+    TG --> LIDAR & CAM --> RTV
+    RTV --> OBS --> RULE --> G1
+    RTV --> BEV & V4
+    G1 --> WM
+    WM --> UI
 ```
 
-**核心设计原则**
-
-| 原则 | 说明 |
-|------|------|
-| **Sim-First** | 所有动作先在数字孪生中验证，再部署真机 |
-| **Language-Driven** | 自然语言作为统一任务接口 |
-| **Closed-Loop** | 感知反馈驱动在线修正与异常回退 |
-| **Modular** | 各层解耦，可独立替换模型 / 仿真 / 硬件 |
-
----
+**闭环：指令 → 启动 → 感知 → 切分 → 识别 → 观察 → 规划 → 执行 → 成功 → 展示**
 
 ## 🚀 快速开始
 
-### 环境要求
-
-| 组件 | 版本 |
-|------|------|
-| Python | ≥ 3.10 |
-| CUDA | ≥ 11.8（GPU 推理） |
-| ROS2 | Humble |
-| Docker | ≥ 24.0（推荐） |
-
-### 安装
+### 一键启动（Mock 模式，无需真机）
 
 ```bash
-# 1. 克隆仓库
 git clone https://github.com/MermaidLiu/Andrea-NexTwin.git
 cd Andrea-NexTwin
+chmod +x scripts/run_demo.sh
+./scripts/run_demo.sh
+```
 
-# 2. 创建虚拟环境
-python -m venv .venv
-source .venv/bin/activate  # Windows: .venv\Scripts\activate
+浏览器打开 **http://localhost:8080**
 
-# 3. 安装依赖
+### 手动启动
+
+```bash
+python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-
-# 4. （可选）Docker 一键启动仿真环境
-docker compose up -d
+python3 -m nextwin
 ```
 
-### 运行 Demo
+### Demo 操作流程
+
+1. 页面加载后自动解析默认救援任务蓝图（10 步）
+2. 点击 **「▶ 执行 Demo」** 启动完整救援闭环
+3. 观察大屏：10 步时间线、LiDAR BEV、D435i 相机、四象限视图、观察 JSON、规则引擎动作
+4. 3D 数字孪生中 G1 移动、推重物、解救 Mini Pi
+
+### 接入宇树 G1 真机（ROS2）
 
 ```bash
-# 启动数字孪生仿真 + API 服务
-python -m nextwin.server --port 8080
+# 1. 安装 unitree_ros2（Ubuntu，参考 scripts/setup_g1_ros2.sh）
+source ~/unitree_ros2/setup.sh
 
-# 另开终端：发送自然语言指令
-python -m nextwin.cli "把桌上的杯子移到托盘里"
+# 2. 配置环境变量（可复制 .env.g1.example）
+export UNITREE_ROBOT_MODEL=g1
+export UNITREE_SENSOR_MODE=ros2
+export UNITREE_LIDAR_TOPIC=/utlidar/cloud
+export UNITREE_CAMERA_TOPIC=/camera/color/image_raw
 
-# 或启动 Web 交互界面
-python -m nextwin.webui
-# 浏览器访问 http://localhost:7860
+# 3. 启动 NexTwin
+python3 -m nextwin
 ```
 
-### 验证安装
+| 传感器 | 话题 | 说明 |
+|--------|------|------|
+| Livox Mid360 | `/utlidar/cloud` | 点云 → BEV + 四向视图 |
+| RealSense D435i | `/camera/color/image_raw` | RGB 视觉 |
+| 深度 | `/camera/depth/image_rect_raw` | 深度图（可选） |
+| IMU | `/utlidar/imu` | 姿态（可选） |
+
+### 可选：接入 LLM
 
 ```bash
-python -m nextwin.health_check
-# 期望输出: ✅ All systems ready (LLM · Sim · ROS2)
+export OPENAI_API_KEY="sk-..."
+export OPENAI_BASE_URL="https://api.openai.com/v1"
+python3 -m nextwin
 ```
 
----
+未配置 API Key 时，系统自动使用规则解析器（Demo 完全可用）。
 
 ## 🛠️ 技术栈
 
-<table>
-<tr>
-<td align="center" width="120"><img src="https://img.shields.io/badge/Python-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python"/><br/><b>Python</b><br/>核心逻辑</td>
-<td align="center" width="120"><img src="https://img.shields.io/badge/PyTorch-EE4C2C?style=flat-square&logo=pytorch&logoColor=white" alt="PyTorch"/><br/><b>PyTorch</b><br/>VLA 模型</td>
-<td align="center" width="120"><img src="https://img.shields.io/badge/ROS2-22314E?style=flat-square&logo=ros&logoColor=white" alt="ROS2"/><br/><b>ROS2</b><br/>机器人通信</td>
-<td align="center" width="120"><img src="https://img.shields.io/badge/LLM-412991?style=flat-square&logo=openai&logoColor=white" alt="LLM"/><br/><b>LLM</b><br/>任务规划</td>
-</tr>
-<tr>
-<td align="center"><img src="https://img.shields.io/badge/Isaac_Sim-76B900?style=flat-square&logo=nvidia&logoColor=white" alt="Isaac Sim"/><br/><b>Isaac Sim</b><br/>高保真仿真</td>
-<td align="center"><img src="https://img.shields.io/badge/FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white" alt="FastAPI"/><br/><b>FastAPI</b><br/>REST API</td>
-<td align="center"><img src="https://img.shields.io/badge/Gradio-FF6B6B?style=flat-square" alt="Gradio"/><br/><b>Gradio</b><br/>Web UI</td>
-<td align="center"><img src="https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white" alt="Docker"/><br/><b>Docker</b><br/>环境隔离</td>
-</tr>
-</table>
-
----
+| 层级 | 技术 |
+|------|------|
+| 后端 | Python · FastAPI · WebSocket · Pydantic |
+| 前端 | HTML/CSS · Three.js · 原生 ES Modules |
+| 感知 | Livox Mid360 · RealSense D435i · OpenCV · YOLOv8 |
+| AI | OpenAI API / 规则解析器 / 规则引擎 |
+| 3D | Three.js 数字孪生渲染 |
+| 硬件 | 宇树 G1 · unitree_ros2 · unitree_sdk2_python |
 
 ## 📁 文件结构
 
 ```
 Andrea-NexTwin/
-├── README.md                 # 项目说明（本文件）
-├── LICENSE                   # MIT 开源协议
-├── requirements.txt          # Python 依赖
-├── docker-compose.yml        # 仿真环境编排
-│
-├── nextwin/                  # 核心 Python 包
-│   ├── __init__.py
-│   ├── server.py             # FastAPI 服务入口
-│   ├── cli.py                # 命令行交互
-│   ├── webui.py              # Gradio Web 界面
-│   │
-│   ├── brain/                # 认知规划层
-│   │   ├── llm_planner.py    # LLM 任务分解
-│   │   ├── vla_model.py      # 视觉-语言-动作模型
-│   │   └── action_seq.py     # 动作序列生成
-│   │
-│   ├── twin/                 # 数字孪生层
-│   │   ├── simulator.py      # 仿真引擎封装
-│   │   ├── scene_builder.py  # 场景构建
-│   │   └── safety_check.py   # 碰撞 / 安全验证
-│   │
-│   ├── exec/                 # 执行层
-│   │   ├── sim2real.py       # Sim-to-Real 迁移
-│   │   └── ros_bridge.py     # ROS2 通信桥
-│   │
-│   └── feedback/             # 感知反馈层
-│       ├── vision.py         # 视觉感知
-│       └── monitor.py        # 执行监控
-│
-├── configs/                  # 配置文件
-│   ├── robot.yaml            # 机器人参数
-│   ├── sim.yaml              # 仿真场景配置
-│   └── llm.yaml              # LLM / VLA 模型配置
-│
-├── assets/                   # 静态资源
-│   ├── architecture.png      # 架构图（导出）
-│   └── demo/                 # Demo 截图 / GIF
-│
-├── ros2_ws/                  # ROS2 工作空间
-│   └── src/nextwin_bringup/  # Launch 文件 & 驱动
-│
-├── scripts/                  # 工具脚本
-│   ├── setup_env.sh          # 环境初始化
-│   └── record_demo.sh        # Demo 录屏辅助
-│
-└── tests/                    # 单元测试
-    ├── test_planner.py
-    └── test_simulator.py
+├── nextwin/                        # 核心 Python 包
+│   ├── server.py                   # FastAPI 服务 (REST + WebSocket)
+│   ├── task_parser.py              # 自然语言 → 10 步救援蓝图
+│   ├── world_model.py              # 物理世界模型状态机
+│   ├── executor.py                 # RescueExecutor 救援流水线
+│   ├── observation.py              # 结构化观察 JSON
+│   ├── rule_engine.py              # turn → forward → stop → push
+│   ├── models.py                   # RescuePhase / ActionPlan 等
+│   ├── config.py                   # G1 传感器与阶段配置
+│   ├── rtv/                        # RTV 感知管线
+│   │   ├── pipeline.py             # 感知 → 切分 → YOLO → 观察
+│   │   ├── lidar_processor.py      # 点云 → BEV + 四向视图
+│   │   ├── panoramic.py            # 相机四向切分
+│   │   └── detector.py             # YOLO + Mock 检测器
+│   └── devices/                    # G1 硬件桥接
+│       ├── unitree_bridge.py       # 统一传感器桥 (mock|ros2|sdk)
+│       ├── ros2_bridge.py          # ROS2 订阅
+│       ├── g1_control.py           # G1 运动控制
+│       ├── g1_config.py            # G1 话题预设
+│       └── mock_sensor.py          # 合成 Livox + D435i 数据
+├── web/                            # NexTwin Studio 大屏前端
+│   ├── index.html
+│   ├── css/style.css
+│   └── js/
+│       ├── app.js                  # 主逻辑 + WebSocket
+│       └── scene3d.js              # Three.js 3D 场景
+├── configs/
+│   ├── g1_sensor.yaml              # G1 传感器配置
+│   └── rescue_scene.yaml           # 救援场景配置
+├── scripts/
+│   ├── run_demo.sh                 # 一键启动
+│   └── setup_g1_ros2.sh            # G1 ROS2 环境脚本
+├── .env.g1.example                 # G1 真机环境变量示例
+├── requirements.txt
+└── README.md
 ```
-
----
 
 ## 🔌 API 示例
 
-### `POST /api/v1/task` — 提交自然语言任务
-
-**Request**
-
-```json
-{
-  "instruction": "把红色方块放到蓝色托盘里",
-  "mode": "sim_first",
-  "robot_id": "andrea_arm_01",
-  "options": {
-    "max_retries": 3,
-    "require_sim_verification": true
-  }
-}
-```
-
-**Response**
-
-```json
-{
-  "task_id": "task_20260709_001",
-  "status": "completed",
-  "phases": [
-    {"phase": "planning",   "status": "done", "duration_ms": 820},
-    {"phase": "simulation", "status": "done", "duration_ms": 3400},
-    {"phase": "execution",  "status": "done", "duration_ms": 5600}
-  ],
-  "actions": [
-    {"step": 1, "action": "move_to",  "target": "red_cube",   "confidence": 0.96},
-    {"step": 2, "action": "grasp",    "target": "red_cube",   "confidence": 0.94},
-    {"step": 3, "action": "place",    "target": "blue_tray",  "confidence": 0.97}
-  ],
-  "result": {
-    "success": true,
-    "message": "红色方块已成功放置到蓝色托盘"
-  }
-}
-```
-
-### `GET /api/v1/status` — 查询系统状态
+### 提交救援指令
 
 ```bash
-curl http://localhost:8080/api/v1/status
-```
-
-```json
-{
-  "system": "Andrea-NexTwin",
-  "version": "0.1.0",
-  "components": {
-    "llm": {"status": "ready", "model": "gpt-4o"},
-    "simulator": {"status": "ready", "engine": "isaac_sim"},
-    "robot": {"status": "connected", "id": "andrea_arm_01"}
-  }
-}
-```
-
-### `POST /api/v1/sim/reset` — 重置仿真场景
-
-```bash
-curl -X POST http://localhost:8080/api/v1/sim/reset \
+curl -X POST http://localhost:8080/api/v1/task \
   -H "Content-Type: application/json" \
-  -d '{"scene": "tabletop_manipulation"}'
+  -d '{"instruction": "执行无人救援任务：宇树机器人启动后，通过 onboard 雷达+视觉感知找到被重物压住的 Mini Pi 并实施救援。"}'
 ```
 
----
+**Response:**
+
+```json
+{
+  "task_id": "task_a1b2c3d4",
+  "blueprint": {
+    "scene": "rescue_scene",
+    "scene_label": "宇树 G1 无人救援",
+    "scenario": "rescue",
+    "target": "mini_pi",
+    "steps": [
+      {"phase": "issue_command", "label": "救援指令下达"},
+      {"phase": "robot_start", "label": "宇树机器人启动"},
+      {"phase": "unitree_sensing", "label": "雷达+视觉感知"},
+      {"phase": "split_views", "label": "四向切分"},
+      {"phase": "yolo_detect", "label": "YOLO 识别 Mini Pi"},
+      {"phase": "observation_json", "label": "观察结果 JSON"},
+      {"phase": "rule_engine", "label": "规则引擎判断"},
+      {"phase": "robot_execute", "label": "转向·前进·推重物"},
+      {"phase": "rescue_success", "label": "成功解救"},
+      {"phase": "display_result", "label": "大屏显示结果"}
+    ]
+  }
+}
+```
+
+### 启动救援执行
+
+```bash
+curl -X POST http://localhost:8080/api/v1/execute \
+  -H "Content-Type: application/json" \
+  -d '{"use_simulation": true}'
+```
+
+### WebSocket 实时推送
+
+```
+ws://localhost:8080/ws
+```
+
+事件类型: `task_created` · `phase_start` · `observation` · `action_plan` · `robot_move` · `phase_end` · `execution_end`
 
 ## 💬 Prompt 示例
 
-### 系统 Prompt（任务规划）
-
+**用户输入：**
 ```
-你是 Andrea-NexTwin 的任务规划器，负责将用户的自然语言指令分解为机器人可执行的动作序列。
+执行无人救援任务：宇树机器人启动后，通过 onboard 雷达+视觉感知找到被重物压住的 Mini Pi 并实施救援。
+```
 
-## 能力
-- 理解桌面操作、导航、抓取-放置等具身任务
-- 输出结构化 JSON 动作序列
-- 考虑安全约束：碰撞避免、力控限制、工作空间边界
-
-## 输出格式
+**规则引擎输出动作序列：**
+```json
 {
-  "task_summary": "一句话任务摘要",
-  "steps": [
-    {"action": "move_to|grasp|place|navigate|open|close", "target": "物体/位置", "params": {}}
-  ],
-  "safety_notes": ["注意事项"]
+  "actions": [
+    {"type": "turn", "params": {"angle_deg": -45}, "reason": "转向坍塌区域"},
+    {"type": "forward", "params": {"distance_m": 1.5}, "reason": "接近 Mini Pi"},
+    {"type": "stop", "params": {}, "reason": "到达推重物位置"},
+    {"type": "push", "params": {"target": "heavy_debris"}, "reason": "推开重物解救 Mini Pi"}
+  ]
 }
-
-## 约束
-- 每步动作必须物理可行
-- 优先选择安全路径
-- 不确定时请求用户澄清
 ```
-
-### 用户 Prompt 示例
-
-| # | 用户输入 | 预期行为 |
-|---|----------|----------|
-| 1 | `帮我把桌上的红色杯子放到洗碗机里` | 识别物体 → 规划抓取路径 → 仿真验证 → 执行 |
-| 2 | `检查一下房间有没有障碍物，然后走到门口` | 环境感知 → 路径规划 → 导航执行 |
-| 3 | `把三个积木按红-绿-蓝顺序叠起来` | 多步任务分解 → 顺序执行 → 状态跟踪 |
-| 4 | `太远了，近一点再抓` | 理解反馈 → 调整末端执行器位姿 → 重试 |
-| 5 | `停止！` | 紧急中断 → 安全停臂 → 状态保存 |
-
-### VLA 视觉 Prompt
-
-```
-<image>当前场景：{scene_description}
-任务：{user_instruction}
-请输出下一步动作的 7-DoF 末端位姿 [x, y, z, qx, qy, qz, qw] 和夹爪开合度。
-```
-
----
 
 ## 🗺️ Roadmap
 
-```mermaid
-gantt
-    title Andrea-NexTwin 开发路线图
-    dateFormat  YYYY-MM
-    section Phase 1 · 基础框架
-    项目架构 & API 设计          :done,    p1a, 2026-05, 2026-06
-    数字孪生仿真环境搭建          :done,    p1b, 2026-05, 2026-06
-    LLM 任务规划集成              :active,  p1c, 2026-06, 2026-07
-    section Phase 2 · 核心能力
-    VLA 模型接入                  :         p2a, 2026-07, 2026-08
-    Sim-to-Real 迁移验证          :         p2b, 2026-07, 2026-08
-    多步任务 & 异常回退           :         p2c, 2026-08, 2026-09
-    section Phase 3 · 比赛 & 开源
-    真机 Demo 录制                :         p3a, 2026-09, 2026-10
-    性能优化 & Benchmark          :         p3b, 2026-09, 2026-10
-    文档完善 & 社区开源           :         p3c, 2026-10, 2026-11
-```
-
-| 里程碑 | 目标 | 状态 |
-|--------|------|------|
-| **M1** | 自然语言 → 仿真执行闭环 | 🟡 进行中 |
-| **M2** | Sim-to-Real 真机验证 | ⚪ 计划中 |
-| **M3** | 多任务泛化 & 比赛 Demo | ⚪ 计划中 |
-| **M4** | 开源发布 & 文档完善 | ⚪ 计划中 |
-
----
+| 阶段 | 目标 | 状态 |
+|------|------|------|
+| **Demo 1.0** | 10 步救援闭环 + Mock 感知 + 大屏展示 | ✅ 完成 |
+| **Demo 2.0** | G1 真机 ROS2 感知对接 | 🟡 进行中 |
+| **Demo 3.0** | G1 低层运动控制 (unitree_ros2) | ⚪ 计划中 |
+| **Studio 1.0** | Hyper3D 场景自动生成 | ⚪ 计划中 |
+| **Cloud** | API 平台 + 数据沉淀 | ⚪ 计划中 |
 
 ## 👥 Team
 
-<table>
-<tr>
-<td align="center" width="200">
-<img src="https://avatars.githubusercontent.com/u/0?v=4" width="100" style="border-radius:50%"/><br/>
-<b>@MermaidLiu</b><br/>
-<sub>项目负责人 · 架构设计</sub><br/>
-<a href="https://github.com/MermaidLiu">GitHub</a>
-</td>
-<td align="center" width="200">
-<img src="https://avatars.githubusercontent.com/u/0?v=4" width="100" style="border-radius:50%"/><br/>
-<b>Andrea</b><br/>
-<sub>具身智能 · 算法研发</sub><br/>
-<sub>（待补充）</sub>
-</td>
-<td align="center" width="200">
-<img src="https://avatars.githubusercontent.com/u/0?v=4" width="100" style="border-radius:50%"/><br/>
-<b>团队成员</b><br/>
-<sub>仿真 / 硬件 / 前端</sub><br/>
-<sub>（待补充）</sub>
-</td>
-</tr>
-</table>
-
-> 💡 **欢迎合作**：如有兴趣加入或交流，请通过 [GitHub Issues](https://github.com/MermaidLiu/Andrea-NexTwin/issues) 联系我们。
-
----
+| 角色 | 负责 |
+|------|------|
+| @MermaidLiu | 项目负责人 · 产品定义 |
+| AI / VLA | 语言任务解析 · 世界模型 · 规则引擎 |
+| 机器人 | 宇树 G1 感知与控制 |
+| 3D | 数字孪生 · 大屏可视化 |
+| 前端 | NexTwin Studio 控制台 |
 
 ## 📄 License
 
-本项目采用 [MIT License](LICENSE) 开源协议。
-
-```
-MIT License · Copyright (c) 2026 Andrea-NexTwin Team
-```
-
----
-
-<div align="center">
-
-**如果这个项目对你有帮助，请给一个 ⭐ Star！**
-
-Made with ❤️ for Embodied AI
-
-</div>
+[MIT License](LICENSE) · Copyright (c) 2026 Andrea-NexTwin Team

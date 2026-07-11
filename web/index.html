@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NexTwin 无人救援 · 大屏</title>
+  <link rel="stylesheet" href="/static/css/style.css" />
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body class="dashboard">
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">⬡</span>
+      <div>
+        <h1>NexTwin 具身智能无人救援</h1>
+        <p>G1 · Livox Mid360 + D435i · YOLO · 规则引擎</p>
+      </div>
+    </div>
+    <div id="status-banner" class="status-banner-top">等待救援指令</div>
+    <div class="topbar-status">
+      <span id="conn-badge" class="badge badge-off">未连接</span>
+      <span id="sys-badge" class="badge badge-idle">待机</span>
+    </div>
+  </header>
+
+  <main class="dash-layout">
+    <!-- 左：指令 + 10步流程 -->
+    <aside class="dash-left">
+      <section class="card">
+        <h2>🚨 救援指令</h2>
+        <textarea id="instruction-input" rows="3"></textarea>
+        <div class="btn-row">
+          <button id="btn-parse" class="btn btn-primary">下达指令</button>
+          <button id="btn-run" class="btn btn-accent" disabled>▶ 启动救援</button>
+        </div>
+        <button id="btn-cancel" class="btn btn-ghost" disabled>中止任务</button>
+      </section>
+      <section class="card card-grow">
+        <h2>📋 10 步执行流程</h2>
+        <ul id="timeline" class="timeline timeline-10"></ul>
+      </section>
+    </aside>
+
+    <!-- 中：视觉 + 3D -->
+    <section class="dash-center">
+      <div class="visual-row">
+        <div class="card card-panorama">
+          <h2>📡 G1 Livox Mid360 · 俯视图 <span id="sensor-tag" class="tag">G1 mock</span></h2>
+          <div id="panorama-view" class="panorama-box">
+            <div class="placeholder">等待雷达点云...</div>
+          </div>
+        </div>
+        <div class="card card-camera">
+          <h2>📷 G1 RealSense D435i</h2>
+          <div id="camera-view" class="panorama-box camera-box">
+            <div class="placeholder">等待相机帧...</div>
+          </div>
+        </div>
+        <div class="card card-views">
+          <h2>🔲 四向切分 <span id="yolo-tag" class="tag">YOLO</span></h2>
+          <div class="quad-grid">
+            <div class="quad-cell" data-view="front"><span class="quad-label">前</span><div class="quad-img" id="view-front"></div></div>
+            <div class="quad-cell" data-view="right"><span class="quad-label">右</span><div class="quad-img" id="view-right"></div></div>
+            <div class="quad-cell" data-view="back"><span class="quad-label">后</span><div class="quad-img" id="view-back"></div></div>
+            <div class="quad-cell" data-view="left"><span class="quad-label">左</span><div class="quad-img" id="view-left"></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="card card-scene">
+        <h2>🤖 3D 救援场景 · 宇树机器人</h2>
+        <div id="canvas-container" class="canvas-wrap">
+          <canvas id="scene-canvas"></canvas>
+          <div id="scene-overlay" class="scene-overlay hidden">
+            <div class="overlay-spinner"></div>
+            <p id="overlay-text">执行中...</p>
+          </div>
+        </div>
+        <div class="progress-wrap"><div id="progress-bar" class="progress-bar" style="width:0%"></div></div>
+      </div>
+    </section>
+
+    <!-- 右：JSON + 规则 + 结果 -->
+    <aside class="dash-right">
+      <section class="card">
+        <h2>📄 观察结果 JSON</h2>
+        <pre id="observation-json" class="code-block">// 步骤6生成...</pre>
+      </section>
+      <section class="card">
+        <h2>⚙️ 规则引擎 · 动作规划</h2>
+        <ul id="action-list" class="action-list"></ul>
+      </section>
+      <section class="card">
+        <h2>🦾 宇树执行状态</h2>
+        <ul id="robot-actions" class="action-list"></ul>
+      </section>
+      <section class="card card-result" id="result-panel">
+        <h2>🏆 任务执行结果</h2>
+        <div id="result-content" class="result-idle">等待任务完成...</div>
+      </section>
+      <section class="card card-log">
+        <h2>📝 日志</h2>
+        <ul id="log-list" class="log-list"></ul>
+      </section>
+    </aside>
+  </main>
+
+  <script type="module" src="/static/js/app.js"></script>
+</body>
+</html>
