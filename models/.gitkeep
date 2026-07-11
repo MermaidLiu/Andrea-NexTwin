@@ -1,0 +1,2 @@
+# 放置自训练 YOLO 权重，例如 rescue_yolo.pt（类别: mini_pi, heavy_debris）
+# 然后在 .env 中设置: YOLO_MODEL=rescue_yolo.pt

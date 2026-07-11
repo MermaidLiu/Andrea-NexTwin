@@ -21,7 +21,9 @@ ros2_ws/log/
 *.usd
 *.usda
 checkpoints/
-models/
+models/*
+!models/.gitkeep
+!models/README.md
 
 # OS
 .DS_Store
