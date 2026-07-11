@@ -1,11 +1,19 @@
 <!DOCTYPE html>
-<html lang="zh-CN" class="auto-theme">
+<html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>NexTwin Studio — 具身智能数字孪生平台</title>
   <meta name="description" content="NexTwin Studio 星孪科技 — 面向开发者与用户的具身智能世界模型平台" />
-  <link rel="stylesheet" href="/static/css/landing.css" />
+  <script>
+    (function () {
+      var saved = localStorage.getItem('nextwin-theme');
+      var theme = saved || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+      document.documentElement.setAttribute('data-theme', theme);
+      document.documentElement.style.colorScheme = theme;
+    })();
+  </script>
+  <link rel="stylesheet" href="/static/css/landing.css?v=2" />
 </head>
 <body class="landing">
 
@@ -29,7 +37,7 @@
       </nav>
 
       <div class="header-actions">
-        <button class="theme-toggle" id="theme-toggle" title="切换主题" aria-label="切换深色/浅色">🌓</button>
+        <button class="theme-toggle" id="theme-toggle" title="切换浅色模式" aria-label="切换深色/浅色">🌙</button>
         <div class="user-chip" id="user-chip">
           <div class="user-avatar" id="user-avatar">U</div>
           <span id="user-id">游客</span>
@@ -66,17 +74,16 @@
                 <stop offset="100%" stop-color="rgba(144,48,240,0.06)"/>
               </linearGradient>
             </defs>
-            <rect width="800" height="400" fill="url(#oceanGrad)"/>
-            <!-- Simplified continents -->
-            <path fill="rgba(0,112,255,0.12)" stroke="rgba(0,112,255,0.2)" stroke-width="1"
+            <rect class="ocean" width="800" height="400" fill="url(#oceanGrad)"/>
+            <path class="continent"
               d="M120,120 Q160,80 200,100 Q240,70 280,90 Q300,110 290,140 Q270,170 240,160 Q200,180 160,170 Q130,160 120,120Z"/>
-            <path fill="rgba(0,112,255,0.12)" stroke="rgba(0,112,255,0.2)" stroke-width="1"
+            <path class="continent"
               d="M380,90 Q420,70 460,80 Q500,75 530,95 Q560,110 550,140 Q520,160 480,150 Q440,155 400,140 Q370,120 380,90Z"/>
-            <path fill="rgba(0,112,255,0.12)" stroke="rgba(0,112,255,0.2)" stroke-width="1"
+            <path class="continent"
               d="M500,200 Q540,180 580,190 Q620,185 650,210 Q670,240 640,260 Q600,270 560,255 Q520,250 500,220 Q490,210 500,200Z"/>
-            <path fill="rgba(144,48,240,0.12)" stroke="rgba(144,48,240,0.2)" stroke-width="1"
+            <path class="continent alt"
               d="M600,280 Q640,260 680,270 Q720,265 740,290 Q750,320 720,340 Q680,350 640,335 Q610,320 600,280Z"/>
-            <path fill="rgba(0,112,255,0.12)" stroke="rgba(0,112,255,0.2)" stroke-width="1"
+            <path class="continent"
               d="M140,220 Q180,200 220,215 Q260,205 280,230 Q290,260 260,280 Q220,290 180,275 Q150,260 140,220Z"/>
           </svg>
           <!-- Dots injected by home.js -->
@@ -92,8 +99,12 @@
         <h2>🎯 使用场景</h2>
         <p class="sc-sub">覆盖具身智能从仿真到真机部署的全链路</p>
         <ul class="scenario-list" id="scenario-list">
-          <li class="scenario-item featured active" data-scenario="rescue">
-            <strong><span class="scenario-icon">🚨</span> 无人救援 <span class="tag-purple">热门</span></strong>
+          <li class="scenario-item featured active" data-scenario="earthquake">
+            <strong><span class="scenario-icon">🏚️</span> 地震搬障 <span class="tag-purple">热门</span></strong>
+            <p>YOLO 识别纸箱压机器人 → 世界模型推演 → G1 搬离障碍</p>
+          </li>
+          <li class="scenario-item" data-scenario="rescue">
+            <strong><span class="scenario-icon">🚨</span> 无人救援</strong>
             <p>宇树 G1 + LiDAR + YOLO，语言驱动 10 步救援闭环</p>
           </li>
           <li class="scenario-item" data-scenario="inspection">
@@ -200,6 +211,6 @@
     <p>© 2026 NexTwin Studio · 星孪科技 · Andrea-NexTwin Team · MIT License</p>
   </footer>
 
-  <script src="/static/js/home.js"></script>
+  <script src="/static/js/home.js?v=2"></script>
 </body>
 </html>

@@ -13,6 +13,30 @@ const DEPLOYMENTS = [
   { city: '悉尼', country: '澳大利亚', type: 'dev', x: 82, y: 72 },
 ];
 
+function getSystemTheme() {
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+
+function getCurrentTheme() {
+  return document.documentElement.getAttribute('data-theme') || getSystemTheme();
+}
+
+function updateThemeToggleUI(theme) {
+  const btn = document.getElementById('theme-toggle');
+  if (!btn) return;
+  const isDark = theme === 'dark';
+  btn.textContent = isDark ? '☀️' : '🌙';
+  btn.title = isDark ? '切换浅色模式' : '切换深色模式';
+  btn.setAttribute('aria-label', isDark ? '切换浅色模式' : '切换深色模式');
+}
+
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  document.documentElement.style.colorScheme = theme;
+  localStorage.setItem('nextwin-theme', theme);
+  updateThemeToggleUI(theme);
+}
+
 function initMap() {
   const container = document.getElementById('world-map');
   if (!container) return;
@@ -78,13 +102,17 @@ function initScenarios() {
 function initTheme() {
   const btn = document.getElementById('theme-toggle');
   const saved = localStorage.getItem('nextwin-theme');
-  if (saved) document.documentElement.setAttribute('data-theme', saved);
+  applyTheme(saved || getSystemTheme());
 
   btn?.addEventListener('click', () => {
-    const current = document.documentElement.getAttribute('data-theme');
-    const next = current === 'dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', next);
-    localStorage.setItem('nextwin-theme', next);
+    const next = getCurrentTheme() === 'dark' ? 'light' : 'dark';
+    applyTheme(next);
+  });
+
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+    if (!localStorage.getItem('nextwin-theme')) {
+      applyTheme(e.matches ? 'dark' : 'light');
+    }
   });
 }
 

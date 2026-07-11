@@ -5,9 +5,11 @@
 body.landing {
   font-family: var(--font);
   background: var(--bg-page);
+  background-image: var(--hero-glow);
   color: var(--text-primary);
   min-height: 100vh;
   line-height: 1.6;
+  transition: background-color 0.25s ease, color 0.25s ease;
 }
 
 /* ── Header ── */
@@ -16,16 +18,20 @@ body.landing {
   top: 0;
   z-index: 100;
   height: var(--header-h);
-  background: rgba(255, 255, 255, 0.92);
+  background: var(--header-bg);
   backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border-light);
   display: flex;
   align-items: center;
   padding: 0 32px;
   gap: 24px;
+  transition: background 0.25s ease, border-color 0.25s ease;
 }
-[data-theme="dark"] .site-header,
-.auto-theme .site-header { background: rgba(22, 24, 35, 0.92); }
+
+[data-theme="light"] .site-header {
+  box-shadow: 0 1px 0 rgba(29, 33, 41, 0.04);
+}
 
 .header-inner {
   max-width: 1280px;
@@ -105,9 +111,18 @@ body.landing {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: border-color var(--transition);
+  transition: border-color var(--transition), background var(--transition), transform 0.15s ease;
 }
-.theme-toggle:hover { border-color: var(--brand-blue); }
+.theme-toggle:hover {
+  border-color: var(--brand-blue);
+  background: rgba(0, 112, 255, 0.04);
+}
+.theme-toggle:active { transform: scale(0.94); }
+
+[data-theme="light"] .theme-toggle {
+  background: #FFFFFF;
+  box-shadow: var(--shadow-sm);
+}
 
 .user-chip {
   display: flex;
@@ -120,6 +135,7 @@ body.landing {
   font-size: 13px;
   color: var(--text-secondary);
   cursor: pointer;
+  transition: background 0.25s ease, border-color 0.25s ease;
 }
 .user-avatar {
   width: 28px;
@@ -175,6 +191,13 @@ body.landing {
 }
 
 /* World map */
+.map-card,
+.scenarios-card,
+.stat-card,
+.cta-card {
+  transition: background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
 .map-card {
   background: var(--bg-card);
   border: 1px solid var(--border-light);
@@ -183,6 +206,9 @@ body.landing {
   box-shadow: var(--shadow-sm);
   position: relative;
   overflow: hidden;
+}
+[data-theme="light"] .map-card {
+  background: linear-gradient(180deg, #FFFFFF 0%, #FAFBFC 100%);
 }
 .map-card h2 {
   font-size: 15px;
@@ -201,14 +227,30 @@ body.landing {
   position: relative;
   width: 100%;
   aspect-ratio: 2 / 1;
-  background: linear-gradient(180deg, rgba(0, 112, 255, 0.03) 0%, rgba(144, 48, 240, 0.03) 100%);
+  background: var(--map-surface);
   border-radius: var(--radius-md);
   border: 1px solid var(--border-light);
   overflow: hidden;
 }
+[data-theme="light"] .map-container {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
 .map-container svg {
   width: 100%;
   height: 100%;
+}
+.map-container .continent {
+  fill: var(--map-continent-fill);
+  stroke: var(--map-continent-stroke);
+  stroke-width: 1;
+  transition: fill 0.25s ease, stroke 0.25s ease;
+}
+.map-container .continent.alt {
+  fill: var(--map-continent-fill-alt);
+  stroke: var(--map-continent-stroke-alt);
+}
+.map-container .ocean {
+  fill: url(#oceanGrad);
 }
 .map-dot {
   position: absolute;
@@ -216,7 +258,7 @@ body.landing {
   height: 10px;
   border-radius: 50%;
   background: var(--brand-blue);
-  border: 2px solid #fff;
+  border: 2px solid var(--map-dot-ring);
   transform: translate(-50%, -50%);
   cursor: pointer;
   z-index: 2;
@@ -246,8 +288,8 @@ body.landing {
   bottom: calc(100% + 8px);
   left: 50%;
   transform: translateX(-50%);
-  background: var(--text-primary);
-  color: var(--bg-card);
+  background: var(--tooltip-bg);
+  color: var(--tooltip-fg);
   font-size: 11px;
   padding: 4px 10px;
   border-radius: 4px;
@@ -283,6 +325,9 @@ body.landing {
   display: flex;
   flex-direction: column;
 }
+[data-theme="light"] .scenarios-card {
+  background: linear-gradient(180deg, #FFFFFF 0%, #FAFBFC 100%);
+}
 .scenarios-card h2 {
   font-size: 15px;
   font-weight: 700;
@@ -306,6 +351,10 @@ body.landing {
   border-radius: var(--radius-md);
   cursor: pointer;
   transition: border-color var(--transition), box-shadow var(--transition), background var(--transition);
+  background: var(--bg-card);
+}
+[data-theme="light"] .scenario-item {
+  background: #FFFFFF;
 }
 .scenario-item:hover {
   border-color: rgba(0, 112, 255, 0.3);
@@ -355,7 +404,10 @@ body.landing {
   padding: 24px;
   text-align: center;
   box-shadow: var(--shadow-sm);
-  transition: box-shadow var(--transition), transform var(--transition);
+  transition: box-shadow var(--transition), transform var(--transition), background 0.25s ease;
+}
+[data-theme="light"] .stat-card {
+  background: #FFFFFF;
 }
 .stat-card:hover {
   box-shadow: var(--shadow-md);
@@ -374,11 +426,6 @@ body.landing {
   font-size: 14px;
   color: var(--text-secondary);
   margin-top: 6px;
-}
-.stat-unit {
-  font-size: 13px;
-  color: var(--text-secondary);
-  font-weight: 400;
 }
 
 /* ── CTA ── */
@@ -399,11 +446,14 @@ body.landing {
   padding: 32px 28px;
   text-align: center;
   box-shadow: var(--shadow-sm);
-  transition: box-shadow var(--transition), transform var(--transition);
+  transition: box-shadow var(--transition), transform var(--transition), background 0.25s ease;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 12px;
+}
+[data-theme="light"] .cta-card {
+  background: #FFFFFF;
 }
 .cta-card:hover {
   box-shadow: var(--shadow-lg);
@@ -411,11 +461,17 @@ body.landing {
 }
 .cta-card.primary-card {
   border-color: rgba(0, 112, 255, 0.25);
-  background: linear-gradient(180deg, rgba(0, 112, 255, 0.04) 0%, var(--bg-card) 100%);
+  background: linear-gradient(180deg, rgba(0, 112, 255, 0.05) 0%, var(--bg-card) 100%);
 }
 .cta-card.purple-card {
   border-color: rgba(144, 48, 240, 0.25);
-  background: linear-gradient(180deg, rgba(144, 48, 240, 0.04) 0%, var(--bg-card) 100%);
+  background: linear-gradient(180deg, rgba(144, 48, 240, 0.05) 0%, var(--bg-card) 100%);
+}
+[data-theme="light"] .cta-card.primary-card {
+  background: linear-gradient(180deg, rgba(0, 112, 255, 0.06) 0%, #FFFFFF 100%);
+}
+[data-theme="light"] .cta-card.purple-card {
+  background: linear-gradient(180deg, rgba(144, 48, 240, 0.05) 0%, #FFFFFF 100%);
 }
 .cta-icon { font-size: 36px; }
 .cta-card h3 { font-size: 18px; font-weight: 700; }
@@ -476,6 +532,10 @@ body.landing {
   text-align: center;
   font-size: 13px;
   color: var(--text-secondary);
+  transition: background 0.25s ease, border-color 0.25s ease;
+}
+[data-theme="light"] .site-footer {
+  background: #FFFFFF;
 }
 
 /* ── Responsive ── */
