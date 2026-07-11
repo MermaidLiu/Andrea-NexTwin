@@ -342,7 +342,15 @@ body.workspace {
 }
 
 /* ── Step 2: Coze Workflow Studio ── */
-.step-panel.active#panel-workflow { display: flex !important; flex-direction: column; height: calc(100vh - 56px - 72px - 240px); min-height: 420px; }
+.step-panel.active#panel-workflow {
+  display: flex !important;
+  flex-direction: column;
+  height: calc(100vh - 56px - 72px - 44px);
+  min-height: 420px;
+}
+body.workspace.console-expanded .step-panel.active#panel-workflow {
+  height: calc(100vh - 56px - 72px - 240px);
+}
 #panel-workflow .coze-studio { flex: 1; min-height: 0; border: none; box-shadow: none; border-radius: var(--radius-lg); }
 
 .coze-studio {
@@ -852,11 +860,13 @@ body.workspace {
 .log-stream .time { color: var(--brand-blue); margin-right: 10px; }
 
 .toast {
-  position: fixed; bottom: 260px; left: 50%; transform: translateX(-50%);
+  position: fixed; bottom: 72px; left: 50%; transform: translateX(-50%);
   background: #161823; color: #fff; padding: 10px 24px;
   border-radius: 24px; font-size: 14px; z-index: 200;
   box-shadow: var(--shadow-lg);
+  transition: bottom 0.3s ease;
 }
+body.workspace.console-expanded .toast { bottom: 260px; }
 .toast.hidden { display: none; }
 
 @media (max-width: 1024px) {

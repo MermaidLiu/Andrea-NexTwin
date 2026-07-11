@@ -673,7 +673,9 @@ function initConsole() {
   });
 
   document.getElementById('btn-console-toggle')?.addEventListener('click', () => {
-    document.getElementById('ws-console').classList.toggle('collapsed');
+    const consoleEl = document.getElementById('ws-console');
+    consoleEl?.classList.toggle('collapsed');
+    document.body.classList.toggle('console-expanded', !consoleEl?.classList.contains('collapsed'));
   });
 }
 
