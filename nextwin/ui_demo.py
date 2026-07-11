@@ -66,15 +66,22 @@ MOCK_OBSTACLE_RTV_RESULT: dict[str, Any] = {
         "front": [
             {
                 "class": "obstacle_box",
-                "label": "长方体障碍物",
-                "confidence": 0.91,
-                "bbox": [210, 290, 430, 510],
+                "label": "纸箱长方体",
+                "confidence": 0.93,
+                "bbox": [200, 180, 440, 420],
                 "view": "front",
-            }
+            },
+            {
+                "class": "mini_pi",
+                "label": "Mini Pi (被纸箱压住)",
+                "confidence": 0.89,
+                "bbox": [230, 320, 380, 480],
+                "view": "front",
+            },
         ]
     },
     "target_view": "front",
-    "summary": "[UI Demo] 前方 YOLO 识别到长方体障碍物",
+    "summary": "[UI Demo] 地震废墟：YOLO 识别到纸箱长方体压着 Mini Pi",
     "observation": {
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "panorama_source": "ui_demo",
@@ -82,21 +89,22 @@ MOCK_OBSTACLE_RTV_RESULT: dict[str, Any] = {
         "target": {
             "id": "obstacle_box",
             "class": "obstacle_box",
-            "label": "长方体障碍物",
-            "confidence": 0.91,
+            "label": "纸箱长方体",
+            "confidence": 0.93,
             "view": "front",
-            "position_estimate": [-2.0, 0.25, -1.5],
+            "position_estimate": [-2.0, 0.35, -1.5],
+            "secondary_target": "mini_pi",
         },
-        "scene_assessment": "obstacle_box_blocking_path",
+        "scene_assessment": "mini_pi_trapped_under_cardboard_box",
         "detector_mode": "ui-demo",
     },
     "action_plan": {
-        "rule_version": "v1.0-obstacle-mvp",
+        "rule_version": "v1.0-earthquake-obstacle",
         "actions": [
-            {"action": "turn", "label": "转向障碍物", "params": {"degrees": 15, "direction": "right"}, "reason": "对准长方体"},
-            {"action": "forward", "label": "接近障碍物", "params": {"distance_m": 1.8}, "reason": "沿通道接近"},
-            {"action": "stop", "label": "停止", "params": {}, "reason": "到达操作点"},
-            {"action": "push", "label": "搬离长方体", "params": {"target": "obstacle_box", "push_distance_m": 1.2}, "reason": "清空通道"},
+            {"action": "turn", "label": "侧向对准纸箱", "params": {"degrees": 15, "direction": "right"}, "reason": "世界模型推荐施力方向"},
+            {"action": "forward", "label": "接近障碍物", "params": {"distance_m": 1.8}, "reason": "沿废墟通道接近"},
+            {"action": "stop", "label": "停止", "params": {}, "reason": "到达推力点"},
+            {"action": "push", "label": "搬离纸箱长方体", "params": {"target": "obstacle_box", "push_distance_m": 1.2}, "reason": "解除对 Mini Pi 的压迫"},
         ],
     },
 }

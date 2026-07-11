@@ -13,6 +13,7 @@ from nextwin.models import RescuePhase, TaskBlueprint, TaskStep
 
 OBSTACLE_KEYWORDS = (
     "障碍", "长方体", "搬离", "搬走", "清除", "方块", "box", "obstacle", "通道",
+    "地震", "纸箱", "纸盒", "压着", "被困",
 )
 
 _BASE_STEPS = [
@@ -35,9 +36,9 @@ _SCENARIO_LABELS = {
         RescuePhase.RESCUE_SUCCESS: ("解救 Mini Pi", "成功移开重物，Mini Pi 脱困"),
     },
     "obstacle": {
-        RescuePhase.YOLO_DETECT: ("YOLO 识别障碍物", "识别前方长方体障碍物"),
-        RescuePhase.ROBOT_EXECUTE: ("执行搬离", "转向 → 接近 → 停止 → 搬离长方体"),
-        RescuePhase.RESCUE_SUCCESS: ("通道畅通", "长方体障碍物已搬离"),
+        RescuePhase.YOLO_DETECT: ("YOLO 场景识别", "识别纸箱长方体 + 被困 Mini Pi"),
+        RescuePhase.ROBOT_EXECUTE: ("执行搬离", "侧向接近 → 施力搬离长方体"),
+        RescuePhase.RESCUE_SUCCESS: ("解救完成", "纸箱已搬离，Mini Pi 脱困"),
     },
 }
 
@@ -83,12 +84,12 @@ def parse_rescue_instruction(instruction: str) -> TaskBlueprint:
 def parse_obstacle_instruction(instruction: str) -> TaskBlueprint:
     instruction = (instruction or OBSTACLE_DEFAULT_INSTRUCTION).strip()
     return TaskBlueprint(
-        scene="obstacle_box_clearance",
-        scene_label="障碍物识别与搬离 MVP",
+        scene="earthquake_box_rescue",
+        scene_label="地震救援 · 纸箱压机器人 · 搬离障碍",
         instruction=instruction,
         scenario="obstacle",
         target="obstacle_box",
-        objects=["unitree", "obstacle_box", "path_zone"],
+        objects=["unitree", "obstacle_box", "mini_pi", "path_zone", "safe_zone"],
         steps=_build_steps("obstacle"),
     )
 

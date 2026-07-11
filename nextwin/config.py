@@ -16,7 +16,7 @@ RESCUE_DEFAULT_INSTRUCTION = (
 )
 
 OBSTACLE_DEFAULT_INSTRUCTION = (
-    "识别前方长方体障碍物，走过去将其搬离通道。"
+    "地震救援现场：纸箱子压着被困机器人，请识别场景并搬离前方长方体障碍物，解救受困目标。"
 )
 
 # MVP 演示默认场景（可通过 NEXTWIN_DEMO_SCENARIO=rescue 切回救援）
@@ -81,15 +81,23 @@ ROBOT_WAYPOINTS_RESCUE = {
 }
 
 OBSTACLE_SCENE_OBJECTS = [
-    {"id": "unitree", "label": "宇树机器人", "type": "robot", "position": [0, 0, 0]},
+    {"id": "unitree", "label": "宇树 G1 机器人", "type": "robot", "position": [0, 0, 0]},
     {
         "id": "obstacle_box",
-        "label": "长方体障碍物",
+        "label": "纸箱长方体障碍物",
         "type": "obstacle",
-        "position": [-2.0, 0.25, -1.5],
-        "metadata": {"shape": "box", "size": [0.6, 0.4, 0.5], "mass_kg": 8.0},
+        "position": [-2.0, 0.35, -1.5],
+        "metadata": {"shape": "box", "size": [0.7, 0.45, 0.55], "mass_kg": 8.0, "material": "cardboard"},
     },
-    {"id": "path_zone", "label": "通道", "type": "zone", "position": [-1.0, 0, -0.8]},
+    {
+        "id": "mini_pi",
+        "label": "Mini Pi (被压)",
+        "type": "victim",
+        "position": [-2.0, 0.1, -1.5],
+        "metadata": {"trapped_by": "obstacle_box"},
+    },
+    {"id": "path_zone", "label": "废墟通道", "type": "zone", "position": [-1.0, 0, -0.8]},
+    {"id": "safe_zone", "label": "安全区", "type": "zone", "position": [2.5, 0, 1.5]},
 ]
 
 ROBOT_WAYPOINTS_OBSTACLE = {

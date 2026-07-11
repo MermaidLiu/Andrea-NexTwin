@@ -59,9 +59,9 @@ def plan_obstacle_clearance(obs: ObservationResult) -> ActionPlan:
     actions = [
         RobotAction(
             action=RobotActionType.TURN,
-            label="转向障碍物",
+            label="侧向对准纸箱",
             params={"direction": "left" if turn_deg < 0 else "right", "degrees": abs(turn_deg) or 15},
-            reason=f"YOLO 在{target_view}方向检测到长方体障碍物，转向对准",
+            reason=f"YOLO 识别纸箱长方体与被压 Mini Pi，转向对准施力方向",
         ),
         RobotAction(
             action=RobotActionType.FORWARD,
@@ -77,17 +77,17 @@ def plan_obstacle_clearance(obs: ObservationResult) -> ActionPlan:
         ),
         RobotAction(
             action=RobotActionType.PUSH,
-            label="搬离长方体",
+            label="搬离纸箱长方体",
             params={
                 "target": "obstacle_box",
                 "direction": "forward",
                 "force_n": 80,
                 "push_distance_m": 1.2,
             },
-            reason="推动长方体障碍物离开通道",
+            reason="推动纸箱解除对 Mini Pi 的压迫",
         ),
     ]
-    return ActionPlan(actions=actions, rule_version="v1.0-obstacle-mvp")
+    return ActionPlan(actions=actions, rule_version="v1.0-earthquake-obstacle")
 
 
 def action_plan_to_dict(plan: ActionPlan) -> dict:

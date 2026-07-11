@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>工作台 · NexTwin Studio</title>
   <link rel="stylesheet" href="/static/css/tokens.css?v=3" />
-  <link rel="stylesheet" href="/static/css/workspace.css?v=4" />
+  <link rel="stylesheet" href="/static/css/workspace.css?v=6" />
 </head>
 <body class="workspace">
 
@@ -85,11 +85,10 @@
           <div class="scene-right">
             <label class="input-label">任务描述</label>
             <div class="gemini-input">
-              <textarea id="scene-prompt" rows="3" placeholder="例如：在坍塌现场找到被压住的 Mini Pi，规划救援路径并推动障碍物…"></textarea>
+              <textarea id="scene-prompt" rows="3" placeholder="例如：地震救援现场，纸箱子压着被困机器人，请识别场景并搬离前方长方体障碍物…"></textarea>
               <div class="gemini-toolbar">
                 <div class="gemini-hints">
-                  <button type="button" class="hint-chip" data-hint="厨房起火了，烟雾越来越大，请带我安全逃生。">🔥 安全逃生</button>
-                  <button type="button" class="hint-chip" data-hint="识别前方长方体障碍物，走过去将其搬离通道">📦 搬离障碍</button>
+                  <button type="button" class="hint-chip hint-primary" data-hint="地震救援现场：纸箱子压着被困机器人，请识别场景并搬离前方长方体障碍物，解救受困目标。">🏚️ 地震搬障</button>
                   <button type="button" class="hint-chip" data-hint="无人救援：找到被困目标并实施救援">🚨 无人救援</button>
                   <button type="button" class="hint-chip" data-hint="巡检 A 区设备，识别异常并上报">🔍 智慧巡检</button>
                   <button type="button" class="hint-chip" data-hint="维护工位：检测损坏零件并打印替换件">🔧 工业维护</button>
@@ -101,105 +100,207 @@
         </div>
       </section>
 
-      <!-- Step 2 -->
+      <!-- Step 2: Coze-style workflow studio -->
       <section class="step-panel" id="panel-workflow" hidden>
-        <div class="panel-card evac-layout">
-          <div class="panel-head">
-            <div>
-              <h2>应急救援工作流</h2>
-              <p>5 阶段流水线：语言输入 → 场景确认 → 周界判断 → 目标确认 → 输出确认</p>
+        <div class="coze-studio">
+
+          <!-- Toolbar -->
+          <div class="coze-toolbar">
+            <div class="coze-toolbar-left">
+              <span class="coze-flow-name">地震救援 · 搬离障碍流水线</span>
+              <span class="coze-badge" id="coze-run-badge">待机</span>
+              <span class="coze-latency" id="coze-latency"></span>
             </div>
-            <div class="panel-tools">
-              <button type="button" class="btn-brand btn-secondary btn-sm" id="btn-run-evacuation">运行推演</button>
+            <div class="coze-toolbar-center">
+              <span class="pillar-tag analysis">分析 YOLO</span>
+              <span class="pillar-arrow">→</span>
+              <span class="pillar-tag understand">理解 世界模型</span>
+              <span class="pillar-arrow">→</span>
+              <span class="pillar-tag decide">决策 具身智能</span>
+            </div>
+            <div class="coze-toolbar-right">
+              <button type="button" class="coze-tool-btn" id="btn-fit-canvas" title="适应画布">⊡</button>
+              <button type="button" class="btn-brand btn-primary btn-sm" id="btn-run-evacuation">
+                <span class="run-icon">▶</span> 运行推演
+              </button>
             </div>
           </div>
 
-          <!-- 5-phase stepper -->
-          <ol class="evac-pipeline" id="evac-pipeline">
-            <li class="evac-phase" data-phase="phase_0_language_input">
-              <span class="evac-phase-num">0</span>
-              <div><strong>语言输入</strong><small>解析指令实体</small></div>
-            </li>
-            <li class="evac-phase" data-phase="phase_1_scene_confirmation">
-              <span class="evac-phase-num">1</span>
-              <div><strong>场景确认</strong><small>安全逃生对齐</small></div>
-            </li>
-            <li class="evac-phase" data-phase="phase_2_perimeter_judgment">
-              <span class="evac-phase-num">2</span>
-              <div><strong>周界判断</strong><small>世界模型预测</small></div>
-            </li>
-            <li class="evac-phase" data-phase="phase_3_target_alignment">
-              <span class="evac-phase-num">3</span>
-              <div><strong>目标确认</strong><small>具身智能规划</small></div>
-            </li>
-            <li class="evac-phase" data-phase="phase_4_output_validation">
-              <span class="evac-phase-num">4</span>
-              <div><strong>输出确认</strong><small>路径与方案</small></div>
-            </li>
-          </ol>
+          <div class="coze-workspace">
+            <!-- Canvas -->
+            <div class="coze-canvas-wrap">
+              <div class="coze-canvas" id="coze-canvas">
+                <svg class="flow-lines" id="flow-lines"></svg>
 
-          <div class="evac-body">
-            <div class="evac-left">
-              <div class="evac-section">
-                <h3>风险系数网格</h3>
-                <div class="risk-grid" id="risk-grid"></div>
-                <p class="risk-legend"><span class="lg-safe">低</span><span class="lg-mid">中</span><span class="lg-high">禁行</span></p>
-              </div>
-              <div class="evac-section">
-                <h3>动作规划序列</h3>
-                <ul class="action-list" id="action-list"><li class="muted">运行推演后显示</li></ul>
+                <!-- Start -->
+                <article class="coze-node start" data-id="n-start" data-phase="phase_0_language_input" style="left:40px;top:120px">
+                  <div class="node-port port-in"></div>
+                  <header class="node-head grad-blue">
+                    <span class="node-type">Trigger</span>
+                    <span class="node-status" data-status>idle</span>
+                  </header>
+                  <div class="node-body">
+                    <div class="node-icon">🗣️</div>
+                    <h4>语言输入</h4>
+                    <p class="node-desc">解析地震救援自然语言指令</p>
+                    <div class="node-chips" id="chip-entities"></div>
+                  </div>
+                  <footer class="node-foot"><span>TaskContext</span><code>phase_0</code></footer>
+                  <div class="node-port port-out"></div>
+                </article>
+
+                <!-- Scene -->
+                <article class="coze-node" data-id="n-scene" data-phase="phase_1_scene_confirmation" style="left:300px;top:40px">
+                  <div class="node-port port-in"></div>
+                  <header class="node-head grad-indigo">
+                    <span class="node-type">Scene</span>
+                    <span class="node-status" data-status>idle</span>
+                  </header>
+                  <div class="node-body">
+                    <div class="node-icon">🛡️</div>
+                    <h4>场景确认</h4>
+                    <p class="node-desc">地震废墟场景 · 障碍解救对齐</p>
+                    <div class="node-metrics">
+                      <div class="metric"><label>风险</label><div class="metric-bar"><i id="m-scene-risk" style="width:0%"></i></div></div>
+                      <div class="metric"><label>对齐</label><strong id="m-scene-aligned">—</strong></div>
+                    </div>
+                  </div>
+                  <footer class="node-foot"><span>SceneContext</span><code>phase_1</code></footer>
+                  <div class="node-port port-out"></div>
+                </article>
+
+                <!-- YOLO Analysis -->
+                <article class="coze-node pillar-analysis" data-id="n-yolo" data-phase="analysis" style="left:300px;top:220px">
+                  <div class="node-port port-in"></div>
+                  <header class="node-head grad-cyan">
+                    <span class="node-type">Perception</span>
+                    <span class="node-status" data-status>idle</span>
+                  </header>
+                  <div class="node-body">
+                    <div class="node-icon">👁️</div>
+                    <h4>YOLO 感知分析</h4>
+                    <p class="node-desc">识别纸箱长方体 + 被压 Mini Pi</p>
+                    <div class="yolo-preview" id="yolo-preview">
+                      <canvas id="yolo-canvas" width="180" height="72"></canvas>
+                    </div>
+                    <div class="node-stats row">
+                      <span><em id="m-yolo-count">0</em> 检测</span>
+                      <span>mAP <em id="m-yolo-map">—</em></span>
+                      <span><em id="m-yolo-lat">—</em>ms</span>
+                    </div>
+                  </div>
+                  <footer class="node-foot"><span>DetectionResult</span><code>YOLOv8</code></footer>
+                  <div class="node-port port-out"></div>
+                </article>
+
+                <!-- World Model -->
+                <article class="coze-node pillar-understand" data-id="n-world" data-phase="phase_2_perimeter_judgment" style="left:580px;top:80px">
+                  <div class="node-port port-in"></div>
+                  <header class="node-head grad-purple">
+                    <span class="node-type">World Model</span>
+                    <span class="node-status" data-status>idle</span>
+                  </header>
+                  <div class="node-body">
+                    <div class="node-icon">🌐</div>
+                    <h4>世界模型理解</h4>
+                    <p class="node-desc">结构稳定性 · 施力方向推演</p>
+                    <div class="risk-grid mini" id="risk-grid"></div>
+                    <div class="node-stats row">
+                      <span>禁行 <em id="m-nogo">0</em></span>
+                      <span>蔓延 <em id="m-spread">—</em></span>
+                      <span>horizon <em id="m-horizon">—</em>s</span>
+                    </div>
+                  </div>
+                  <footer class="node-foot"><span>PerimeterMap</span><code>phase_2</code></footer>
+                  <div class="node-port port-out"></div>
+                </article>
+
+                <!-- Decision -->
+                <article class="coze-node pillar-decide" data-id="n-decide" data-phase="phase_3_target_alignment" style="left:580px;top:280px">
+                  <div class="node-port port-in"></div>
+                  <header class="node-head grad-orange">
+                    <span class="node-type">Embodied AI</span>
+                    <span class="node-status" data-status>idle</span>
+                  </header>
+                  <div class="node-body">
+                    <div class="node-icon">🧠</div>
+                    <h4>具身决策引擎</h4>
+                    <p class="node-desc">接近路径 · 搬离动作编排</p>
+                    <ul class="action-stack" id="action-stack"></ul>
+                    <div class="node-stats row">
+                      <span>电量 <em id="m-battery">—</em></span>
+                      <span>动作 <em id="m-actions">0</em></span>
+                      <span id="m-feasible" class="feas-tag">—</span>
+                    </div>
+                  </div>
+                  <footer class="node-foot"><span>TargetActionPlan</span><code>phase_3</code></footer>
+                  <div class="node-port port-out"></div>
+                </article>
+
+                <!-- Gate -->
+                <article class="coze-node gate-node" data-id="n-gate" data-phase="awaiting_confirmation" style="left:860px;top:140px">
+                  <div class="node-port port-in"></div>
+                  <header class="node-head grad-gate">
+                    <span class="node-type">Human Gate</span>
+                    <span class="node-status" data-status>idle</span>
+                  </header>
+                  <div class="node-body">
+                    <div class="node-icon">⏸</div>
+                    <h4>输出与确认</h4>
+                    <p class="node-desc">搬离方案 · 脱困路径审阅</p>
+                    <div class="path-preview" id="path-preview"></div>
+                  </div>
+                  <footer class="node-foot"><span>WorkflowOutput</span><code>phase_4</code></footer>
+                  <div class="node-port port-out"></div>
+                </article>
+
+                <!-- Execute -->
+                <article class="coze-node end" data-id="n-exec" data-phase="executing" style="left:1140px;top:140px">
+                  <div class="node-port port-in"></div>
+                  <header class="node-head grad-green">
+                    <span class="node-type">Execute</span>
+                    <span class="node-status" data-status>idle</span>
+                  </header>
+                  <div class="node-body">
+                    <div class="node-icon">🦾</div>
+                    <h4>物理执行</h4>
+                    <p class="node-desc">G1 真机 / 数字孪生仿真</p>
+                    <div class="exec-ring" id="exec-ring"><span>—</span></div>
+                  </div>
+                  <footer class="node-foot"><span>Runtime</span><code>ROS2</code></footer>
+                </article>
               </div>
             </div>
-            <div class="evac-right">
-              <div class="evac-section">
-                <h3>最优路径</h3>
-                <ol class="path-list" id="path-list"><li class="muted">—</li></ol>
-              </div>
-              <div class="evac-section">
-                <h3>解决方案</h3>
-                <ul class="solution-list" id="solution-list"><li class="muted">—</li></ul>
-              </div>
-              <div class="evac-section rationale-box">
-                <h3>世界模型推演依据</h3>
-                <p id="wm-rationale" class="muted">—</p>
-              </div>
-              <div class="evac-gate hidden" id="evac-gate">
-                <p>确认执行该逃生方案？</p>
-                <div class="gate-actions">
-                  <button type="button" class="btn-brand btn-primary btn-sm" id="btn-evac-y">确认 (Y)</button>
-                  <button type="button" class="btn-brand btn-ghost-light btn-sm" id="btn-evac-n">拒绝 (N)</button>
+
+            <!-- Inspector -->
+            <aside class="coze-inspector" id="coze-inspector">
+              <div class="insp-header">
+                <div>
+                  <span class="insp-type" id="insp-type">节点详情</span>
+                  <h3 id="insp-title">选择节点查看推理过程</h3>
                 </div>
-                <textarea id="evac-feedback" rows="2" placeholder="拒绝时可填写修改意见…"></textarea>
+                <span class="insp-phase" id="insp-phase">—</span>
+              </div>
+              <div class="insp-body" id="insp-body">
+                <p class="insp-placeholder">点击画布节点查看推理详情。本 Demo 为<strong>地震救援</strong>：YOLO 识别纸箱压着 Mini Pi → 世界模型推演安全施力方向 → 具身决策编排搬离动作。</p>
+              </div>
+              <div class="insp-gate hidden" id="evac-gate">
+                <div class="gate-header">
+                  <span class="gate-icon">⏸</span>
+                  <div>
+                    <strong>执行门禁</strong>
+                    <p>确认后将下发至机器人执行层</p>
+                  </div>
+                </div>
+                <div class="gate-actions">
+                  <button type="button" class="btn-brand btn-primary btn-sm" id="btn-evac-y">确认执行 (Y)</button>
+                  <button type="button" class="btn-brand btn-ghost-light btn-sm" id="btn-evac-n">拒绝重推 (N)</button>
+                </div>
+                <textarea id="evac-feedback" rows="2" placeholder="拒绝时可填写修改意见，将带着反馈重新从场景确认推演…"></textarea>
               </div>
               <div class="evac-status" id="evac-status"></div>
-            </div>
+            </aside>
           </div>
-
-          <!-- Legacy canvas (collapsed) -->
-          <details class="legacy-flow">
-            <summary>经典节点编排视图</summary>
-            <div class="coze-canvas" id="coze-canvas">
-              <svg class="flow-lines" id="flow-lines"></svg>
-              <div class="wf-node start" data-id="n1" style="left:48px;top:100px">
-                <span class="wf-icon">🗣️</span><strong>语言输入</strong><small>用户指令</small>
-              </div>
-              <div class="wf-node" data-id="n2" style="left:240px;top:80px">
-                <span class="wf-icon">🧠</span><strong>任务解析</strong><small>LLM / 规则</small>
-              </div>
-              <div class="wf-node" data-id="n3" style="left:432px;top:100px">
-                <span class="wf-icon">🌐</span><strong>世界模型</strong><small>物理仿真</small>
-              </div>
-              <div class="wf-node" data-id="n4" style="left:624px;top:48px">
-                <span class="wf-icon">👁️</span><strong>感知</strong><small>LiDAR + 视觉</small>
-              </div>
-              <div class="wf-node" data-id="n5" style="left:624px;top:180px">
-                <span class="wf-icon">⚙️</span><strong>规则引擎</strong><small>动作规划</small>
-              </div>
-              <div class="wf-node end" data-id="n6" style="left:816px;top:110px">
-                <span class="wf-icon">🦾</span><strong>机器人执行</strong><small>真机 / 仿真</small>
-              </div>
-            </div>
-          </details>
         </div>
       </section>
 
@@ -283,6 +384,6 @@
   </footer>
 
   <div class="toast hidden" id="toast"></div>
-  <script src="/static/js/workspace.js?v=4"></script>
+  <script src="/static/js/workspace.js?v=6"></script>
 </body>
 </html>

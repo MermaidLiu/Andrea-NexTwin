@@ -181,12 +181,21 @@ class YOLODetector:
         if scenario == "obstacle":
             detections.append({
                 "class": "obstacle_box",
-                "label": "长方体障碍物",
-                "confidence": 0.91,
-                "bbox": [w * 0.32, h * 0.38, w * 0.68, h * 0.78],
+                "label": "纸箱长方体",
+                "confidence": 0.93,
+                "bbox": [w * 0.28, h * 0.22, w * 0.72, h * 0.58],
                 "color": "#eab308",
                 "is_target": True,
                 "priority": 1,
+            })
+            detections.append({
+                "class": "mini_pi",
+                "label": "Mini Pi (被压)",
+                "confidence": 0.89,
+                "bbox": [w * 0.34, h * 0.48, w * 0.62, h * 0.82],
+                "color": "#f97316",
+                "is_target": True,
+                "priority": 2,
             })
             return detections
 

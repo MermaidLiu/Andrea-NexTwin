@@ -205,55 +205,78 @@ async def billing_usage():
 
 # ── Evacuation workflow API ──
 
-@app.post("/api/v1/evacuation/start")
-async def evacuation_start(req: StartEvacuationRequest):
+# ── Workflow API (earthquake obstacle demo) ──
+
+@app.post("/api/v1/workflow/start")
+async def workflow_start(req: StartEvacuationRequest):
+    from nextwin.obstacle_pipeline.store import obstacle_store
+    from nextwin.obstacle_pipeline.workflow import ObstacleWorkflow
+    from nextwin.task_parser import detect_scenario
+
+    scenario = detect_scenario(req.instruction)
+    if scenario == "obstacle":
+        wf = ObstacleWorkflow()
+        state = wf.start(req.instruction, world_model_id=req.world_model_id, robot_id=req.robot_id)
+        obstacle_store.create(wf)
+        await broadcast({"type": "workflow_started", "scenario": "obstacle", "session_id": state.session_id})
+        return state.model_dump(mode="json")
+
     from nextwin.evacuation.exceptions import EvacuationWorkflowError
     from nextwin.evacuation.store import evacuation_store
     from nextwin.evacuation.workflow import EvacuationWorkflow
 
     wf = EvacuationWorkflow()
     try:
-        state = wf.start(
-            req.instruction,
-            world_model_id=req.world_model_id,
-            robot_id=req.robot_id,
-        )
+        state = wf.start(req.instruction, world_model_id=req.world_model_id, robot_id=req.robot_id)
     except EvacuationWorkflowError as exc:
         raise HTTPException(400, str(exc)) from exc
     evacuation_store.create(wf)
-    await broadcast({"type": "evacuation_started", "session_id": state.session_id, "phase": state.phase.value})
+    await broadcast({"type": "workflow_started", "scenario": "evacuation", "session_id": state.session_id})
     return state.model_dump(mode="json")
 
 
-@app.get("/api/v1/evacuation/{session_id}")
-async def evacuation_get(session_id: str):
+@app.get("/api/v1/workflow/{session_id}")
+async def workflow_get(session_id: str):
+    from nextwin.obstacle_pipeline.store import obstacle_store
     from nextwin.evacuation.store import evacuation_store
 
-    wf = evacuation_store.get(session_id)
+    wf = obstacle_store.get(session_id) or evacuation_store.get(session_id)
     if not wf or not wf.state:
         raise HTTPException(404, "Session not found")
     return wf.state.model_dump(mode="json")
 
 
-@app.post("/api/v1/evacuation/{session_id}/confirm")
-async def evacuation_confirm(session_id: str, req: ConfirmEvacuationRequest):
+@app.post("/api/v1/workflow/{session_id}/confirm")
+async def workflow_confirm(session_id: str, req: ConfirmEvacuationRequest):
     from nextwin.evacuation.exceptions import WorkflowStateError
+    from nextwin.obstacle_pipeline.store import obstacle_store
     from nextwin.evacuation.store import evacuation_store
 
-    wf = evacuation_store.get(session_id)
+    wf = obstacle_store.get(session_id) or evacuation_store.get(session_id)
     if not wf:
         raise HTTPException(404, "Session not found")
     try:
         state = wf.confirm(approved=req.approved, feedback=req.feedback)
     except WorkflowStateError as exc:
         raise HTTPException(400, str(exc)) from exc
-    await broadcast({
-        "type": "evacuation_confirmed",
-        "session_id": session_id,
-        "approved": req.approved,
-        "phase": state.phase.value,
-    })
+    await broadcast({"type": "workflow_confirmed", "session_id": session_id, "approved": req.approved})
     return state.model_dump(mode="json")
+
+
+# Legacy evacuation endpoints (alias)
+@app.post("/api/v1/evacuation/start")
+async def evacuation_start(req: StartEvacuationRequest):
+    return await workflow_start(req)
+
+
+@app.get("/api/v1/evacuation/{session_id}")
+async def evacuation_get(session_id: str):
+    return await workflow_get(session_id)
+
+
+@app.post("/api/v1/evacuation/{session_id}/confirm")
+async def evacuation_confirm(session_id: str, req: ConfirmEvacuationRequest):
+    return await workflow_confirm(session_id, req)
 
 
 # ── Developer portal API ──

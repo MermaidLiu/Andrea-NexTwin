@@ -36,14 +36,16 @@ def build_observation(
     if scenario == "obstacle":
         target = {
             "id": "obstacle_box",
-            "label": target_detection.get("label", "长方体障碍物"),
+            "label": target_detection.get("label", "纸箱长方体"),
             "view": target_view,
             "bbox": target_detection.get("bbox", []),
             "confidence": target_detection.get("confidence", 0),
-            "position_estimate": target_detection.get("scene_position", [-2.0, 0.25, -1.5]),
+            "position_estimate": target_detection.get("scene_position", [-2.0, 0.35, -1.5]),
             "shape": "box",
+            "material": "cardboard",
+            "trapped_victim": "mini_pi",
         }
-        assessment = "obstacle_box_blocking_path"
+        assessment = "mini_pi_trapped_under_cardboard_box"
     else:
         target = {
             "id": "mini_pi",

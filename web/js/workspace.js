@@ -4,12 +4,14 @@ const STEPS = ['scene', 'workflow', 'robot', 'worldmodel'];
 let currentStep = 0;
 let selectedRobot = null;
 let selectedWm = null;
+let workflowScenario = 'obstacle';
 let evacuationSessionId = null;
 let evacuationState = null;
 
 const PHASE_ORDER = [
   'phase_0_language_input',
   'phase_1_scene_confirmation',
+  'analysis',
   'phase_2_perimeter_judgment',
   'phase_3_target_alignment',
   'phase_4_output_validation',
@@ -18,6 +20,31 @@ const PHASE_ORDER = [
   'completed',
   'shelter_fallback',
 ];
+
+const COZE_EDGES = [
+  ['n-start', 'n-scene'],
+  ['n-start', 'n-yolo'],
+  ['n-scene', 'n-world'],
+  ['n-yolo', 'n-world'],
+  ['n-world', 'n-decide'],
+  ['n-decide', 'n-gate'],
+  ['n-gate', 'n-exec'],
+];
+
+const NODE_META = {
+  'n-start': { title: '语言输入', type: 'Trigger', pillar: null },
+  'n-scene': { title: '场景确认', type: 'Scene', pillar: null },
+  'n-yolo': { title: 'YOLO 感知分析', type: 'Perception · Analysis', pillar: 'analysis' },
+  'n-world': { title: '世界模型理解', type: 'World Model · Understanding', pillar: 'understand' },
+  'n-decide': { title: '具身决策引擎', type: 'Embodied AI · Decision', pillar: 'decide' },
+  'n-gate': { title: '输出与确认', type: 'Human Gate', pillar: null },
+  'n-exec': { title: '物理执行', type: 'Runtime', pillar: null },
+};
+
+const RUN_SEQUENCE = ['n-start', 'n-scene', 'n-yolo', 'n-world', 'n-decide', 'n-gate'];
+
+let selectedNodeId = null;
+let isAnimating = false;
 
 const ROBOTS = [
   { id: 'g1', vendor: '宇树 Unitree', name: 'G1 人形', version: 'v2.1', type: 'humanoid', tags: ['救援', '巡检', 'ROS2'] },
@@ -126,7 +153,9 @@ function gotoStep(idx) {
   const main = document.getElementById('ws-main');
   if (main) main.scrollTop = 0;
 
-  if (currentStep === 1) requestAnimationFrame(drawFlowLines);
+  if (currentStep === 1) {
+    requestAnimationFrame(() => { drawFlowLines(); fitCanvas(); });
+  }
   if (currentStep >= 2) refreshEval();
 }
 
@@ -153,6 +182,10 @@ function initSteps() {
 
 // ── Scene ──
 function initScene() {
+  const defaultHint = '地震救援现场：纸箱子压着被困机器人，请识别场景并搬离前方长方体障碍物，解救受困目标。';
+  const prompt = document.getElementById('scene-prompt');
+  if (prompt && !prompt.value.trim()) prompt.value = defaultHint;
+
   document.querySelectorAll('.hint-chip').forEach((btn) => {
     btn.addEventListener('click', () => {
       document.getElementById('scene-prompt').value = btn.dataset.hint;
@@ -168,160 +201,80 @@ function initScene() {
   });
 }
 
-// ── Evacuation workflow API ──
+// ── Coze workflow engine ──
 function riskColor(risk, isNoGo) {
   if (isNoGo || risk >= 0.72) return '#F53F3F';
   if (risk >= 0.4) return '#FF7D00';
   return '#00B42A';
 }
 
-function updateEvacPipeline(phase) {
-  const idx = PHASE_ORDER.indexOf(phase);
-  document.querySelectorAll('.evac-phase').forEach((el) => {
-    const pIdx = PHASE_ORDER.indexOf(el.dataset.phase);
-    el.classList.toggle('active', el.dataset.phase === phase);
-    el.classList.toggle('done', pIdx >= 0 && pIdx < idx && phase !== 'shelter_fallback');
-    el.classList.toggle('fallback', phase === 'shelter_fallback' && el.dataset.phase === 'phase_2_perimeter_judgment');
+function setNodeStatus(nodeId, status) {
+  const node = document.querySelector(`.coze-node[data-id="${nodeId}"]`);
+  if (!node) return;
+  node.classList.remove('running', 'done', 'error');
+  if (status === 'running') node.classList.add('running');
+  if (status === 'done') node.classList.add('done');
+  if (status === 'error') node.classList.add('error');
+  const badge = node.querySelector('[data-status]');
+  if (badge) badge.textContent = status;
+}
+
+function resetAllNodes() {
+  RUN_SEQUENCE.concat(['n-exec']).forEach((id) => setNodeStatus(id, 'idle'));
+  document.querySelectorAll('.coze-node').forEach((n) => n.classList.remove('selected'));
+}
+
+function drawYoloPreview(detections) {
+  const canvas = document.getElementById('yolo-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width;
+  const h = canvas.height;
+  ctx.fillStyle = '#1a1d24';
+  ctx.fillRect(0, 0, w, h);
+
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+  for (let i = 0; i < w; i += 20) { ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, h); ctx.stroke(); }
+  for (let j = 0; j < h; j += 20) { ctx.beginPath(); ctx.moveTo(0, j); ctx.lineTo(w, j); ctx.stroke(); }
+
+  const colors = { obstacle_box: '#eab308', mini_pi: '#f97316', cardboard: '#d4a017', robot: '#0070FF', debris: '#86909C' };
+  detections.forEach((d) => {
+    const c = colors[d.cls] || '#9030F0';
+    ctx.strokeStyle = c;
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(d.x, d.y, d.w, d.h);
+    ctx.fillStyle = c + '33';
+    ctx.fillRect(d.x, d.y, d.w, d.h);
+    ctx.fillStyle = c;
+    ctx.font = '9px SF Mono, monospace';
+    ctx.fillText(`${d.cls} ${(d.conf * 100).toFixed(0)}%`, d.x + 2, d.y + 10);
   });
 }
 
-function renderEvacuationState(state) {
-  evacuationState = state;
-  updateEvacPipeline(state.phase);
-
-  const grid = document.getElementById('risk-grid');
-  if (grid && state.perimeter_map?.risk_grid) {
-    const cells = state.perimeter_map.risk_grid;
-    const w = state.perimeter_map.grid_width || 8;
-    grid.style.gridTemplateColumns = `repeat(${w}, 1fr)`;
-    grid.innerHTML = cells.map((c) =>
-      `<div class="risk-cell" style="background:${riskColor(c.risk, c.is_no_go)}" title="(${c.x},${c.y}) risk=${c.risk}"></div>`
-    ).join('');
+function buildYoloDetections(state) {
+  const isObstacle = workflowScenario === 'obstacle' || state.task_context?.mission_goal === 'clear_obstacle_rescue';
+  if (isObstacle) {
+    return [
+      { cls: 'obstacle_box', conf: 0.93, x: 24, y: 12, w: 88, h: 52 },
+      { cls: 'mini_pi', conf: 0.89, x: 42, y: 38, w: 56, h: 28 },
+    ];
   }
-
-  const actions = state.action_plan?.actions || [];
-  const actionList = document.getElementById('action-list');
-  if (actionList) {
-    actionList.innerHTML = actions.length
-      ? actions.map((a) => `<li><strong>${a.label}</strong> <span class="muted">P${a.priority}</span><br><small>${a.reason}</small></li>`).join('')
-      : '<li class="muted">备用协议 — 无外出动作</li>';
-  }
-
-  const path = state.output?.optimal_path?.waypoints || [];
-  const pathList = document.getElementById('path-list');
-  if (pathList) {
-    pathList.innerHTML = path.length
-      ? path.map((wp) => `<li>${wp.label || 'waypoint'} (${wp.x}, ${wp.z})</li>`).join('')
-      : '<li class="muted">—</li>';
-  }
-
-  const solutions = state.output?.solution_steps || [];
-  const solList = document.getElementById('solution-list');
-  if (solList) {
-    solList.innerHTML = solutions.length
-      ? solutions.map((s) => `<li>${s}</li>`).join('')
-      : '<li class="muted">—</li>';
-  }
-
-  const rationale = document.getElementById('wm-rationale');
-  if (rationale) {
-    rationale.textContent = state.output?.world_model_rationale || '—';
-    rationale.classList.toggle('muted', !state.output?.world_model_rationale);
-  }
-
-  const gate = document.getElementById('evac-gate');
-  const statusEl = document.getElementById('evac-status');
-  if (gate) {
-    gate.classList.toggle('hidden', state.phase !== 'awaiting_confirmation');
-  }
-  if (statusEl) {
-    statusEl.className = 'evac-status';
-    if (state.phase === 'completed') {
-      statusEl.classList.add('success');
-      statusEl.textContent = '✓ 方案已确认，进入执行阶段（模拟完成）';
-    } else if (state.fallback_protocol) {
-      statusEl.classList.add('warn');
-      statusEl.textContent = `⚠ 已降级至 ${state.fallback_protocol}，等待确认`;
-    } else if (state.phase === 'awaiting_confirmation') {
-      statusEl.textContent = `Session ${state.session_id?.slice(0, 8)}… — 等待 Y/N 确认`;
-    } else {
-      statusEl.textContent = `当前阶段: ${state.phase}`;
-    }
-  }
-
-  (state.logs || []).slice(-6).forEach((line) => {
-    if (!line.startsWith('[Gate]')) log(line);
-  });
+  const hazards = state.task_context?.hazard_types || [];
+  const dets = [];
+  if (hazards.includes('fire')) dets.push({ cls: 'fire', conf: 0.94, x: 18, y: 14, w: 52, h: 38 });
+  return dets;
 }
 
-async function runEvacuationPipeline(instruction) {
-  setStatus('推演中');
-  log('[Evacuation] 启动 5 阶段工作流…');
-  try {
-    const body = {
-      instruction,
-      robot_id: selectedRobot,
-      world_model_id: selectedWm,
-    };
-    const res = await fetch('/api/v1/evacuation/start', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
-    if (!res.ok) throw new Error(await res.text());
-    const state = await res.json();
-    evacuationSessionId = state.session_id;
-    renderEvacuationState(state);
-    setStatus(state.fallback_protocol ? '掩体避险' : '等待确认');
-    toast(state.fallback_protocol ? '无法找到安全路径，已启用备用协议' : '推演完成，请确认方案');
-    log(`[Evacuation] 推演完成 phase=${state.phase}`);
-  } catch (err) {
-    setStatus('推演失败');
-    toast('工作流推演失败');
-    log(`[Evacuation] 错误: ${err.message}`);
-  }
-}
-
-async function confirmEvacuation(approved) {
-  if (!evacuationSessionId) { toast('请先运行推演'); return; }
-  const feedback = document.getElementById('evac-feedback')?.value.trim() || '';
-  try {
-    const res = await fetch(`/api/v1/evacuation/${evacuationSessionId}/confirm`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ approved, feedback }),
-    });
-    if (!res.ok) throw new Error(await res.text());
-    const state = await res.json();
-    renderEvacuationState(state);
-    if (approved) {
-      setStatus('已执行');
-      toast('方案已确认并执行');
-      log('[Gate] 用户确认 Y');
-    } else {
-      setStatus('重新推演');
-      toast('已拒绝，重新从阶段 1 推演');
-      log(`[Gate] 用户拒绝 N${feedback ? `: ${feedback}` : ''}`);
-      document.getElementById('evac-feedback').value = '';
-    }
-  } catch (err) {
-    toast('确认失败');
-    log(`[Evacuation] 确认错误: ${err.message}`);
-  }
-}
-
-// ── Workflow canvas ──
-const EDGES = [['n1', 'n2'], ['n2', 'n3'], ['n3', 'n4'], ['n3', 'n5'], ['n4', 'n6'], ['n5', 'n6']];
-
-function drawFlowLines() {
+function drawFlowLines(activeEdge) {
   const svg = document.getElementById('flow-lines');
   const canvas = document.getElementById('coze-canvas');
   if (!svg || !canvas) return;
 
-  const rect = canvas.getBoundingClientRect();
-  svg.setAttribute('viewBox', `0 0 ${canvas.scrollWidth} ${canvas.scrollHeight}`);
+  const w = canvas.scrollWidth;
+  const h = canvas.scrollHeight;
+  svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
 
-  const paths = EDGES.map(([a, b]) => {
+  const paths = COZE_EDGES.map(([a, b]) => {
     const na = canvas.querySelector(`[data-id="${a}"]`);
     const nb = canvas.querySelector(`[data-id="${b}"]`);
     if (!na || !nb) return '';
@@ -330,53 +283,307 @@ function drawFlowLines() {
     const x2 = nb.offsetLeft;
     const y2 = nb.offsetTop + nb.offsetHeight / 2;
     const mx = (x1 + x2) / 2;
-    return `<path d="M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}" fill="none" stroke="url(#lineGrad)" stroke-width="2" opacity="0.7"/>`;
+    const isActive = activeEdge === `${a}-${b}`;
+    return `<path class="${isActive ? 'active' : ''}" data-edge="${a}-${b}" d="M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}" fill="none" stroke="url(#lineGrad)" stroke-width="${isActive ? 2.5 : 1.8}" opacity="${isActive ? 1 : 0.45}"/>`;
   }).join('');
 
   svg.innerHTML = `
     <defs>
       <linearGradient id="lineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
         <stop offset="0%" stop-color="#0070FF"/>
-        <stop offset="100%" stop-color="#9030F0"/>
+        <stop offset="50%" stop-color="#9030F0"/>
+        <stop offset="100%" stop-color="#FF7D00"/>
       </linearGradient>
     </defs>${paths}`;
 }
 
-function initWorkflowDrag() {
-  const canvas = document.getElementById('coze-canvas');
-  canvas?.querySelectorAll('.wf-node').forEach((node) => {
-    let dragging = false, ox = 0, oy = 0;
-    node.addEventListener('mousedown', (e) => {
-      dragging = true;
-      ox = e.clientX - node.offsetLeft;
-      oy = e.clientY - node.offsetTop;
-      node.style.zIndex = 10;
-    });
-    document.addEventListener('mousemove', (e) => {
-      if (!dragging) return;
-      node.style.left = `${Math.max(0, e.clientX - ox)}px`;
-      node.style.top = `${Math.max(0, e.clientY - oy)}px`;
-      drawFlowLines();
-    });
-    document.addEventListener('mouseup', () => {
-      if (dragging) { dragging = false; node.style.zIndex = 2; }
-    });
+function fitCanvas() {
+  const wrap = document.querySelector('.coze-canvas-wrap');
+  if (wrap) wrap.scrollLeft = 0;
+}
+
+function selectNode(nodeId) {
+  selectedNodeId = nodeId;
+  document.querySelectorAll('.coze-node').forEach((n) => {
+    n.classList.toggle('selected', n.dataset.id === nodeId);
   });
+  if (evacuationState) renderInspector(nodeId, evacuationState);
+}
+
+function renderInspector(nodeId, state) {
+  const meta = NODE_META[nodeId];
+  if (!meta) return;
+  document.getElementById('insp-type').textContent = meta.type;
+  document.getElementById('insp-title').textContent = meta.title;
+  document.getElementById('insp-phase').textContent = document.querySelector(`.coze-node[data-id="${nodeId}"]`)?.dataset.phase || '—';
+
+  const body = document.getElementById('insp-body');
+  let html = '';
+
+  if (nodeId === 'n-start' && state.task_context) {
+    const t = state.task_context;
+    html = `<div class="insp-section"><h4>TaskContext</h4>
+      <dl class="insp-kv"><dt>指令</dt><dd>${t.instruction}</dd>
+      <dt>目标</dt><dd>${t.mission_goal}</dd><dt>紧迫度</dt><dd>${t.urgency}</dd></dl></div>
+      <div class="insp-section"><h4>语义实体</h4><ul class="insp-list">${(t.entities || []).map((e) => `<li><strong>${e.entity_type}</strong> · ${e.value} <span class="muted">(${(e.confidence * 100).toFixed(0)}%)</span></li>`).join('')}</ul></div>`;
+  } else if (nodeId === 'n-scene' && state.scene_context) {
+    const s = state.scene_context;
+    html = `<div class="insp-section"><h4>SceneContext</h4>
+      <dl class="insp-kv"><dt>对齐</dt><dd>${s.aligned ? '✓ 障碍搬离解救' : '✗ 未对齐'}</dd>
+      <dt>场景</dt><dd>${s.hazard_type === 'earthquake_debris' ? '地震废墟' : s.hazard_type}</dd><dt>布局</dt><dd>${s.building_layout}</dd>
+      <dt>集结点</dt><dd>${(s.muster_points || []).join(' → ')}</dd></dl>
+      <p class="muted" style="margin-top:8px">${s.rationale}</p></div>`;
+  } else if (nodeId === 'n-yolo') {
+    const dets = buildYoloDetections(state);
+    html = `<div class="insp-section"><h4>Detection Pipeline</h4>
+      <dl class="insp-kv"><dt>模型</dt><dd>YOLOv8-n · TensorRT</dd>
+      <dt>输入</dt><dd>640×480 RGB + 深度</dd><dt>检测数</dt><dd>${dets.length}</dd>
+      <dt>延迟</dt><dd>18ms</dd><dt>mAP@50</dt><dd>0.912</dd></dl></div>
+      <div class="insp-section"><h4>Bounding Boxes</h4><ul class="insp-list">${dets.map((d) => `<li><strong>${d.cls}</strong> conf=${(d.conf * 100).toFixed(1)}% · [${d.x},${d.y},${d.w},${d.h}]</li>`).join('')}</ul></div>`;
+  } else if (nodeId === 'n-world' && state.perimeter_map) {
+    const p = state.perimeter_map;
+    html = `<div class="insp-section"><h4>PerimeterMap</h4>
+      <dl class="insp-kv"><dt>网格</dt><dd>${p.grid_width}×${p.grid_height}</dd>
+      <dt>禁行区</dt><dd>${(p.no_go_zones || []).length} 区域</dd>
+      <dt>最小风险</dt><dd>${p.min_safe_risk?.toFixed(3)}</dd>
+      <dt>版本</dt><dd>${p.world_model_version}</dd></dl></div>
+      <div class="insp-section"><h4>结构仿真</h4>
+      <dl class="insp-kv"><dt>余震概率</dt><dd>${((p.predictions?.aftershock_prob ?? 0) * 100).toFixed(0)}%</dd>
+      <dt> debris 位移</dt><dd>${((p.predictions?.debris_shift_risk ?? 0) * 100).toFixed(0)}%</dd>
+      <dt>施力方向</dt><dd>${p.predictions?.recommended_push_vector ?? '—'}</dd>
+      <dt>安全推力</dt><dd>${p.predictions?.safe_push_force_n ?? '—'} N</dd></dl></div>
+      <div class="insp-section"><h4>推演依据</h4><p>${state.output?.world_model_rationale || '—'}</p></div>`;
+  } else if (nodeId === 'n-decide' && state.action_plan) {
+    const a = state.action_plan;
+    html = `<div class="insp-section"><h4>TargetActionPlan</h4>
+      <dl class="insp-kv"><dt>可行</dt><dd>${a.feasible ? '✓ 约束满足' : '✗ 不可行'}</dd>
+      <dt>电量</dt><dd>${a.robot_constraints?.battery_pct}%</dd>
+      <dt>运动学</dt><dd>${a.robot_constraints?.kinematics}</dd></dl></div>
+      <div class="insp-section"><h4>子目标</h4><ul class="insp-list">${(a.sub_goals || []).map((g) => `<li>${g}</li>`).join('')}</ul></div>
+      <div class="insp-section"><h4>动作原语</h4><ul class="insp-list">${(a.actions || []).map((act) => `<li><strong>P${act.priority} ${act.label}</strong><br><span class="muted">${act.reason}</span></li>`).join('')}</ul></div>`;
+  } else if (nodeId === 'n-gate' && state.output) {
+    const o = state.output;
+    html = `<div class="insp-section"><h4>最优路径</h4>
+      <ul class="insp-list">${(o.optimal_path?.waypoints || []).map((wp) => `<li>${wp.label} (${wp.x}, ${wp.z}) · risk=${o.optimal_path.total_risk}</li>`).join('')}</ul></div>
+      <div class="insp-section"><h4>解决方案</h4><ul class="insp-list">${(o.solution_steps || []).map((s) => `<li>${s}</li>`).join('')}</ul></div>
+      <div class="insp-section"><h4>应急预案</h4><ul class="insp-list">${(o.contingency_notes || []).map((c) => `<li>${c}</li>`).join('')}</ul></div>`;
+  } else if (nodeId === 'n-exec') {
+    html = `<div class="insp-section"><h4>执行状态</h4>
+      <p>${state.phase === 'completed' ? '✓ 方案已确认，仿真执行完成' : '等待门禁确认后下发至 G1 执行层'}</p></div>`;
+  } else {
+    html = '<p class="insp-placeholder muted">运行推演后查看此节点详情</p>';
+  }
+  body.innerHTML = html;
+}
+
+async function animatePipelineReveal(state) {
+  isAnimating = true;
+  resetAllNodes();
+  const badge = document.getElementById('coze-run-badge');
+  if (badge) { badge.textContent = '推演中'; badge.className = 'coze-badge running'; }
+
+  const incomingEdge = {
+    'n-start': null,
+    'n-scene': 'n-start-n-scene',
+    'n-yolo': 'n-start-n-yolo',
+    'n-world': 'n-yolo-n-world',
+    'n-decide': 'n-world-n-decide',
+    'n-gate': 'n-decide-n-gate',
+  };
+
+  for (const nodeId of RUN_SEQUENCE) {
+    setNodeStatus(nodeId, 'running');
+    selectNode(nodeId);
+    if (incomingEdge[nodeId]) drawFlowLines(incomingEdge[nodeId]);
+    await new Promise((r) => setTimeout(r, 480));
+    setNodeStatus(nodeId, 'done');
+    populateNodeData(nodeId, state);
+  }
+
+  populateNodeData('n-gate', state);
+  drawFlowLines(null);
+  if (badge) {
+    badge.textContent = state.phase === 'awaiting_confirmation' ? '等待确认' : '完成';
+    badge.className = `coze-badge ${state.phase === 'awaiting_confirmation' ? 'wait' : 'done'}`;
+  }
+  isAnimating = false;
+  selectNode('n-gate');
+}
+
+function populateNodeData(nodeId, state) {
+  if (nodeId === 'n-start' && state.task_context) {
+    const chips = document.getElementById('chip-entities');
+    if (chips) chips.innerHTML = (state.task_context.entities || []).slice(0, 4)
+      .map((e) => `<span class="chip">${e.value}</span>`).join('');
+  }
+  if (nodeId === 'n-scene' && state.scene_context) {
+    const s = state.scene_context;
+    const bar = document.getElementById('m-scene-risk');
+    const al = document.getElementById('m-scene-aligned');
+    if (bar) bar.style.width = `${(s.initial_risk_level || 0) * 100}%`;
+    if (al) al.textContent = s.aligned ? '✓' : '✗';
+  }
+  if (nodeId === 'n-yolo') {
+    const dets = buildYoloDetections(state);
+    drawYoloPreview(dets);
+    document.getElementById('m-yolo-count').textContent = dets.length;
+    document.getElementById('m-yolo-map').textContent = '0.91';
+    document.getElementById('m-yolo-lat').textContent = '18';
+  }
+  if (nodeId === 'n-world' && state.perimeter_map) {
+    const p = state.perimeter_map;
+    const grid = document.getElementById('risk-grid');
+    if (grid && p.risk_grid) {
+      grid.style.gridTemplateColumns = `repeat(${p.grid_width || 8}, 1fr)`;
+      grid.innerHTML = p.risk_grid.map((c) =>
+        `<div class="risk-cell" style="background:${riskColor(c.risk, c.is_no_go)}" title="risk=${c.risk}"></div>`
+      ).join('');
+    }
+    const nogo = p.risk_grid?.filter((c) => c.is_no_go).length || 0;
+    document.getElementById('m-nogo').textContent = nogo;
+    const pred = p.predictions || {};
+    document.getElementById('m-spread').textContent = pred.recommended_push_vector?.replace('_', '-') ?? '—';
+    document.getElementById('m-horizon').textContent = pred.horizon_sec ?? 90;
+  }
+  if (nodeId === 'n-decide' && state.action_plan) {
+    const a = state.action_plan;
+    const stack = document.getElementById('action-stack');
+    if (stack) stack.innerHTML = (a.actions || []).slice(0, 3).map((act) =>
+      `<li><span class="prio">${act.priority}</span>${act.label}</li>`
+    ).join('');
+    document.getElementById('m-battery').textContent = `${a.robot_constraints?.battery_pct ?? '—'}%`;
+    document.getElementById('m-actions').textContent = (a.actions || []).length;
+    const ft = document.getElementById('m-feasible');
+    if (ft) { ft.textContent = a.feasible ? '可行' : '不可行'; ft.className = `feas-tag ${a.feasible ? 'ok' : 'no'}`; }
+  }
+  if (nodeId === 'n-gate' && state.output) {
+    const prev = document.getElementById('path-preview');
+    if (prev) prev.innerHTML = (state.output.optimal_path?.waypoints || [])
+      .map((wp, i) => `${i + 1}. ${wp.label || 'wp'} (${wp.x},${wp.z})`).join('<br>');
+  }
+  if (nodeId === 'n-exec' && state.phase === 'completed') {
+    const ring = document.getElementById('exec-ring');
+    if (ring) { ring.classList.add('active'); ring.querySelector('span').textContent = 'OK'; }
+    setNodeStatus('n-exec', 'done');
+  }
+}
+
+async function renderEvacuationState(state, animate = false) {
+  evacuationState = state;
+
+  if (animate) await animatePipelineReveal(state);
+  else {
+    RUN_SEQUENCE.forEach((id) => { setNodeStatus(id, 'done'); populateNodeData(id, state); });
+    populateNodeData('n-gate', state);
+    selectNode('n-gate');
+  }
+
+  const gate = document.getElementById('evac-gate');
+  const statusEl = document.getElementById('evac-status');
+  if (gate) gate.classList.toggle('hidden', state.phase !== 'awaiting_confirmation');
+  if (statusEl) {
+    statusEl.className = 'evac-status';
+    if (state.phase === 'completed') {
+      statusEl.classList.add('success');
+      statusEl.textContent = '✓ 方案已确认，进入物理执行阶段';
+      populateNodeData('n-exec', state);
+    } else if (state.fallback_protocol) {
+      statusEl.classList.add('warn');
+      statusEl.textContent = `⚠ 已降级至 ${state.fallback_protocol}，等待确认`;
+      setNodeStatus('n-world', 'error');
+    } else if (state.phase === 'awaiting_confirmation') {
+      statusEl.textContent = `Session ${state.session_id?.slice(0, 8)}… · 等待人机确认`;
+    }
+  }
+
+  (state.logs || []).slice(-4).forEach((line) => log(line));
+}
+
+async function runEvacuationPipeline(instruction) {
+  setStatus('推演中');
+  log('[Pipeline] 启动地震救援工作流 · 分析→理解→决策');
+  resetAllNodes();
+  const badge = document.getElementById('coze-run-badge');
+  if (badge) { badge.textContent = '连接中'; badge.className = 'coze-badge running'; }
+
+  try {
+    const t0 = performance.now();
+    const res = await fetch('/api/v1/workflow/start', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ instruction, robot_id: selectedRobot, world_model_id: selectedWm }),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    const state = await res.json();
+    evacuationSessionId = state.session_id;
+    workflowScenario = state.task_context?.mission_goal === 'clear_obstacle_rescue' ? 'obstacle' : 'evacuation';
+    const elapsed = Math.round(performance.now() - t0);
+    const lat = document.getElementById('coze-latency');
+    if (lat) lat.textContent = `${elapsed}ms API + ${RUN_SEQUENCE.length * 420}ms pipeline`;
+    await renderEvacuationState(state, true);
+    setStatus(state.fallback_protocol ? '保守策略' : '等待确认');
+    toast(state.fallback_protocol ? '结构风险偏高，已启用保守搬离策略' : '推演完成 — 请确认搬离方案');
+  } catch (err) {
+    setStatus('推演失败');
+    toast('工作流推演失败');
+    log(`[Pipeline] 错误: ${err.message}`);
+    if (badge) { badge.textContent = '失败'; badge.className = 'coze-badge'; }
+  }
+}
+
+async function confirmEvacuation(approved) {
+  if (!evacuationSessionId) { toast('请先运行推演'); return; }
+  const feedback = document.getElementById('evac-feedback')?.value.trim() || '';
+  try {
+    const res = await fetch(`/api/v1/workflow/${evacuationSessionId}/confirm`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ approved, feedback }),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    const state = await res.json();
+    if (approved) {
+      setNodeStatus('n-gate', 'done');
+      setNodeStatus('n-exec', 'done');
+      populateNodeData('n-exec', state);
+      const badge = document.getElementById('coze-run-badge');
+      if (badge) { badge.textContent = '已执行'; badge.className = 'coze-badge done'; }
+    } else {
+      resetAllNodes();
+      await runEvacuationPipeline(state.task_context?.instruction || document.getElementById('scene-prompt')?.value.trim());
+      return;
+    }
+    renderEvacuationState(state, false);
+    setStatus(approved ? '已执行' : '重新推演');
+    toast(approved ? '方案已确认并执行' : '已拒绝，重新推演');
+    document.getElementById('evac-feedback').value = '';
+  } catch (err) {
+    toast('确认失败');
+    log(`[Gate] 错误: ${err.message}`);
+  }
 }
 
 function initWorkflow() {
   drawFlowLines();
-  window.addEventListener('resize', drawFlowLines);
-  initWorkflowDrag();
+  window.addEventListener('resize', () => drawFlowLines());
+
+  document.querySelectorAll('.coze-node').forEach((node) => {
+    node.addEventListener('click', (e) => {
+      e.stopPropagation();
+      selectNode(node.dataset.id);
+    });
+  });
 
   document.getElementById('btn-run-evacuation')?.addEventListener('click', () => {
     const text = document.getElementById('scene-prompt')?.value.trim();
     if (!text) { toast('请先在步骤 1 输入任务描述'); return; }
     runEvacuationPipeline(text);
   });
-
+  document.getElementById('btn-fit-canvas')?.addEventListener('click', fitCanvas);
   document.getElementById('btn-evac-y')?.addEventListener('click', () => confirmEvacuation(true));
   document.getElementById('btn-evac-n')?.addEventListener('click', () => confirmEvacuation(false));
+
+  drawYoloPreview([]);
 }
 
 // ── Robot cards ──

@@ -107,16 +107,16 @@ class WorldModel:
             "display_result": "任务完成，结果已推送至大屏",
         }
         obstacle_messages = {
-            "issue_command": "障碍物搬离任务已下达 ✅",
+            "issue_command": "地震救援任务已下达 ✅",
             "robot_start": "宇树 G1 启动中...",
-            "unitree_sensing": "雷达 + 视觉扫描通道...",
+            "unitree_sensing": "废墟环境雷达 + 视觉扫描...",
             "split_views": "四向视角切分完成...",
-            "yolo_detect": "YOLO 识别长方体障碍物...",
-            "observation_json": "生成障碍物观察 JSON...",
-            "rule_engine": "规划接近与搬离动作...",
-            "robot_execute": "机器人执行搬离动作...",
-            "rescue_success": "障碍物已搬离，通道畅通 ✅",
-            "display_result": "MVP 演示完成",
+            "yolo_detect": "YOLO 识别纸箱长方体与被压 Mini Pi...",
+            "observation_json": "生成地震救援观察 JSON...",
+            "rule_engine": "规划侧向接近与搬离动作...",
+            "robot_execute": "G1 执行搬离障碍物...",
+            "rescue_success": "纸箱已搬离，Mini Pi 成功脱困 🎉",
+            "display_result": "地震救援 Demo 完成",
         }
         messages = obstacle_messages if self.state.scenario == "obstacle" else rescue_messages
         self.state.message = messages.get(phase, "执行中...")
@@ -199,7 +199,8 @@ class WorldModel:
                     obj.position, self.state.robot_heading, push_dist
                 )
                 obj.state = ObjectState.CLEARED
-            self.state.message = "搬离长方体障碍物 — 通道已清空"
+            self._set_object_state("mini_pi", ObjectState.RESCUED)
+            self.state.message = "搬离纸箱长方体 — Mini Pi 脱困"
             return
 
         self._set_object_state("heavy_debris", ObjectState.CLEARED)
@@ -211,8 +212,9 @@ class WorldModel:
         self.state.status = "completed"
         self.state.progress = 1.0
         if self.state.scenario == "obstacle":
-            self.state.message = "障碍物搬离 MVP 完成 — 通道畅通 ✅"
+            self.state.message = "地震救援完成 — 纸箱已搬离，Mini Pi 脱困 ✅"
             self._set_object_state("obstacle_box", ObjectState.CLEARED)
+            self._set_object_state("mini_pi", ObjectState.RESCUED)
         else:
             self.state.message = "救援任务完成 — Mini Pi 已安全脱困 ✅"
             self._set_object_state("mini_pi", ObjectState.RESCUED)

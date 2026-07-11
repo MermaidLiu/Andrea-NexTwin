@@ -1,28 +1,35 @@
-# NexTwin MVP — 障碍物搬离场景
-# 用户指令示例：识别前方长方体障碍物，走过去将其搬离
+# NexTwin MVP — 地震救援 · 纸箱压机器人 · 搬离障碍
+# 用户指令：识别场景，搬离长方体障碍物，解救被困 Mini Pi
 
-scene: obstacle_box_clearance
+scene: earthquake_box_rescue
 scenario: obstacle
 target: obstacle_box
 
 instruction: >
-  识别前方长方体障碍物，走过去将其搬离通道。
+  地震救援现场：纸箱子压着被困机器人，请识别场景并搬离前方长方体障碍物，解救受困目标。
 
 objects:
   - id: unitree
-    label: 宇树机器人
+    label: 宇树 G1 机器人
     type: robot
     position: [0, 0, 0]
   - id: obstacle_box
-    label: 长方体障碍物
+    label: 纸箱长方体障碍物
     type: obstacle
-    position: [-2.0, 0.25, -1.5]
+    position: [-2.0, 0.35, -1.5]
     metadata:
       shape: box
-      size: [0.6, 0.4, 0.5]   # 长×高×宽 (m)
+      size: [0.7, 0.45, 0.55]
       mass_kg: 8.0
+      material: cardboard
+  - id: mini_pi
+    label: Mini Pi (被压)
+    type: victim
+    position: [-2.0, 0.1, -1.5]
+    metadata:
+      trapped_by: obstacle_box
   - id: path_zone
-    label: 通道
+    label: 废墟通道
     type: zone
     position: [-1.0, 0, -0.8]
 
@@ -34,19 +41,21 @@ waypoints:
 
 yolo:
   target_class: obstacle_box
+  secondary_class: mini_pi
   coco_demo_aliases:
     suitcase: obstacle_box
     book: obstacle_box
-    handbag: obstacle_box
-    chair: obstacle_box
+    cell phone: mini_pi
 
 rule_engine:
   sequence:
+    - yolo_detect_box_and_victim
     - turn_toward_target
     - forward_to_box
     - stop
     - push_box_away
+    - verify_victim_free
 
 physics:
   push_distance_m: 1.2
-  friction: 0.6
+  friction: 0.55
