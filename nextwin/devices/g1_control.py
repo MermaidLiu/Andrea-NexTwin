@@ -1,4 +1,12 @@
-"""G1 locomotion control hooks (unitree_ros2 / SDK2)."""
+"""G1 locomotion control hooks (unitree_ros2 / SDK2).
+
+This is Layer 4 — separate from vision (nextwin/vision/) and perception (nextwin/perception/).
+
+To connect real robot motion:
+  1. Set UNITREE_CONTROL_MODE=ros2
+  2. Implement _execute_ros2() using unitree_ros2 G1 lowlevel examples
+  3. RescueExecutor already calls G1Controller.execute() for each action
+"""
 
 from __future__ import annotations
 

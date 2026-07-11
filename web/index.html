@@ -20,7 +20,7 @@
       <span class="logo">⬡</span>
       <div>
         <h1>NexTwin 具身智能无人救援</h1>
-        <p>G1 · Livox Mid360 + D435i · YOLO · 规则引擎</p>
+        <p id="subtitle">G1 Livox + D435i · YOLO · 规则引擎</p>
       </div>
     </div>
     <div id="status-banner" class="status-banner-top">等待救援指令</div>
@@ -58,13 +58,15 @@
           </div>
         </div>
         <div class="card card-camera">
-          <h2>📷 G1 RealSense D435i</h2>
+          <h2>📷 G1 RealSense D435i
+            <button id="btn-camera-preview" class="btn-mini" type="button">刷新</button>
+          </h2>
           <div id="camera-view" class="panorama-box camera-box">
             <div class="placeholder">等待相机帧...</div>
           </div>
         </div>
         <div class="card card-views">
-          <h2>🔲 四向切分 <span id="yolo-tag" class="tag">YOLO</span></h2>
+          <h2>🔲 四向切分 + YOLO <span id="yolo-tag" class="tag">yolo</span></h2>
           <div class="quad-grid">
             <div class="quad-cell" data-view="front"><span class="quad-label">前</span><div class="quad-img" id="view-front"></div></div>
             <div class="quad-cell" data-view="right"><span class="quad-label">右</span><div class="quad-img" id="view-right"></div></div>

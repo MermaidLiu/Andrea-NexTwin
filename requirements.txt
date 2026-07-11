@@ -1,4 +1,4 @@
-# Andrea-NexTwin core dependencies
+# Andrea-NexTwin dependencies
 fastapi>=0.110.0
 uvicorn[standard]>=0.27.0
 pydantic>=2.0.0
@@ -6,16 +6,15 @@ pyyaml>=6.0
 httpx>=0.27.0
 python-multipart>=0.0.9
 
-# RTV: Unitree LiDAR + Vision + YOLO
+# G1 vision + LiDAR processing
 numpy>=1.24.0
 Pillow>=10.0.0
 opencv-python>=4.8.0
 
-# YOLO (optional)
+# YOLO detection on G1 camera frames
 ultralytics>=8.0.0
 
 # G1 ROS2 (Ubuntu + unitree_ros2):
 #   source ~/unitree_ros2/setup.sh
 #   export UNITREE_SENSOR_MODE=ros2
-#   export UNITREE_ROBOT_MODEL=g1
 # See configs/g1_sensor.yaml and .env.g1.example

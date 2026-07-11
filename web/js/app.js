@@ -6,6 +6,7 @@ const els = {
   btnParse: $('#btn-parse'),
   btnRun: $('#btn-run'),
   btnCancel: $('#btn-cancel'),
+  btnCameraPreview: $('#btn-camera-preview'),
   timeline: $('#timeline'),
   statusBanner: $('#status-banner'),
   connBadge: $('#conn-badge'),
@@ -44,16 +45,43 @@ async function init() {
   scene3d = new NexTwinScene($('#scene-canvas'));
   connectWS();
   bindEvents();
+  await loadSystemStatus();
+  await refreshCameraPreview();
   const res = await fetch('/api/v1/demo/default');
   const data = await res.json();
   els.instruction.value = data.instruction;
   await parseTask();
 }
 
+async function loadSystemStatus() {
+  try {
+    const res = await fetch('/api/v1/status');
+    const data = await res.json();
+    const mode = data.components?.rtv?.sensor || 'ros2';
+    const detector = data.components?.rtv?.detector || 'yolo';
+    els.sensorTag.textContent = mode;
+    els.yoloTag.textContent = detector;
+    document.getElementById('subtitle').textContent =
+      `G1 ${mode} · ${detector.toUpperCase()} · 规则引擎`;
+  } catch (_) { /* ignore */ }
+}
+
+async function refreshCameraPreview() {
+  try {
+    const res = await fetch('/api/v1/camera/preview');
+    const data = await res.json();
+    if (data.frame_b64) renderCamera(data.frame_b64);
+    if (data.split_views) renderQuadViews(data.split_views);
+    if (data.detector?.mode) els.yoloTag.textContent = data.detector.mode;
+    if (data.sensor_mode) els.sensorTag.textContent = data.sensor_mode;
+  } catch (_) { /* G1 camera may be offline */ }
+}
+
 function bindEvents() {
   els.btnParse.addEventListener('click', parseTask);
   els.btnRun.addEventListener('click', runRescue);
   els.btnCancel.addEventListener('click', () => fetch('/api/v1/execute/cancel', { method: 'POST' }));
+  els.btnCameraPreview?.addEventListener('click', refreshCameraPreview);
 }
 
 function connectWS() {

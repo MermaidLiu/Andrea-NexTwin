@@ -16,8 +16,10 @@ RESCUE_DEFAULT_INSTRUCTION = (
 )
 
 # Unitree G1 sensor defaults (Livox Mid360 + RealSense D435i)
-UNITREE_ROBOT_MODEL = os.getenv("UNITREE_ROBOT_MODEL", "g1")  # g1
-UNITREE_SENSOR_MODE = os.getenv("UNITREE_SENSOR_MODE", "mock")  # mock | ros2 | sdk
+UNITREE_ROBOT_MODEL = os.getenv("UNITREE_ROBOT_MODEL", "g1")
+# ros2 | sdk | mock  — 默认 ros2，使用 G1 onboard 相机 + 雷达
+UNITREE_SENSOR_MODE = os.getenv("UNITREE_SENSOR_MODE", "ros2")
+UNITREE_LIDAR_MODE = os.getenv("UNITREE_LIDAR_MODE", "ros2")  # mock | ros2
 UNITREE_LIDAR_TOPIC = os.getenv("UNITREE_LIDAR_TOPIC", "/utlidar/cloud")
 UNITREE_CAMERA_TOPIC = os.getenv("UNITREE_CAMERA_TOPIC", "/camera/color/image_raw")
 UNITREE_DEPTH_TOPIC = os.getenv("UNITREE_DEPTH_TOPIC", "/camera/depth/image_rect_raw")
@@ -26,9 +28,10 @@ UNITREE_NETWORK_IFACE = os.getenv("UNITREE_NETWORK_IFACE", "eth0")
 UNITREE_SENSOR_TIMEOUT = float(os.getenv("UNITREE_SENSOR_TIMEOUT", "5.0"))
 UNITREE_CONTROL_MODE = os.getenv("UNITREE_CONTROL_MODE", "mock")  # mock | ros2
 
-# RTV / YOLO
+# RTV / YOLO — 默认启用，对 G1 相机帧做检测
 RTV_VIEW_SIZE = int(os.getenv("RTV_VIEW_SIZE", "640"))
-YOLO_MODEL = os.getenv("YOLO_MODEL", "yolov8n.pt")
+YOLO_ENABLE = os.getenv("NEXTWIN_ENABLE_YOLO", "1") == "1"
+YOLO_MODEL = os.getenv("YOLO_MODEL", "yolov8n.pt")  # 或 models/rescue_yolo.pt
 YOLO_CONF = float(os.getenv("YOLO_CONF", "0.25"))
 YOLO_DEVICE = os.getenv("YOLO_DEVICE", "cpu")
 

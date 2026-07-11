@@ -78,47 +78,78 @@ flowchart TB
 
 **闭环：指令 → 启动 → 感知 → 切分 → 识别 → 观察 → 规划 → 执行 → 成功 → 展示**
 
+## 🧩 模块化分层（可独立开发）
+
+| 层级 | 目录 | 职责 | 当前状态 |
+|------|------|------|----------|
+| **1 传感器** | `nextwin/devices/` | G1 Livox + RealSense (ROS2) | ✅ ros2 默认 |
+| **2 视觉** | `nextwin/vision/` | G1 相机帧四向切分 | ✅ |
+| **3 感知** | `nextwin/perception/` | YOLO 目标检测 | ✅ 默认启用 |
+| **4 融合** | `nextwin/rtv/` | LiDAR BEV + YOLO + 规则引擎 | ✅ |
+| **5 控制** | `nextwin/control/` | G1 转向/前进/推重物 | ⏸ mock，你来实现 |
+
 ## 🚀 快速开始
 
-### 一键启动（Mock 模式，无需真机）
+### 一键启动（G1 真机 + YOLO）
 
 ```bash
 git clone https://github.com/MermaidLiu/Andrea-NexTwin.git
 cd Andrea-NexTwin
 chmod +x scripts/run_demo.sh
+
+# 连接 G1 并启动 ROS2（Ubuntu）
+source ~/unitree_ros2/setup.sh
 ./scripts/run_demo.sh
 ```
 
-浏览器打开 **http://localhost:8080**
+默认 `UNITREE_SENSOR_MODE=ros2`，订阅 G1 **RealSense D435i** 相机 + **Livox Mid360** 雷达，并对四向切分帧运行 **YOLO**。
+
+浏览器打开 **http://localhost:8080**，点击 **「刷新」** 预览 G1 相机画面。
 
 ### 手动启动
 
 ```bash
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
+source ~/unitree_ros2/setup.sh
+export UNITREE_SENSOR_MODE=ros2
+export NEXTWIN_ENABLE_YOLO=1
+python3 -m nextwin
+```
+
+复制 `.env.g1.example` 可配置话题与 YOLO 模型路径。
+
+### 自训练 YOLO 模型
+
+将权重放到 `models/rescue_yolo.pt`（类别 `mini_pi`, `heavy_debris`），然后：
+
+```bash
+export YOLO_MODEL=rescue_yolo.pt
+```
+
+### 无真机调试（Mock）
+
+```bash
+export UNITREE_SENSOR_MODE=mock
 python3 -m nextwin
 ```
 
 ### Demo 操作流程
 
-1. 页面加载后自动解析默认救援任务蓝图（10 步）
-2. 点击 **「▶ 执行 Demo」** 启动完整救援闭环
-3. 观察大屏：10 步时间线、LiDAR BEV、D435i 相机、四象限视图、观察 JSON、规则引擎动作
-4. 3D 数字孪生中 G1 移动、推重物、解救 Mini Pi
+1. 页面加载后拉取 G1 相机预览 + 默认救援蓝图
+2. 点击 **「▶ 启动救援」** 启动 10 步闭环
+3. 观察：LiDAR BEV、G1 相机四向切分、YOLO 检测框、观察 JSON、规则引擎动作
+4. 3D 数字孪生中 G1 移动（控制层 mock，在 `nextwin/control/` 接入真机）
 
-### 接入宇树 G1 真机（ROS2）
+### 接入宇树 G1（ROS2）
 
 ```bash
-# 1. 安装 unitree_ros2（Ubuntu，参考 scripts/setup_g1_ros2.sh）
 source ~/unitree_ros2/setup.sh
-
-# 2. 配置环境变量（可复制 .env.g1.example）
 export UNITREE_ROBOT_MODEL=g1
 export UNITREE_SENSOR_MODE=ros2
 export UNITREE_LIDAR_TOPIC=/utlidar/cloud
 export UNITREE_CAMERA_TOPIC=/camera/color/image_raw
-
-# 3. 启动 NexTwin
+export NEXTWIN_ENABLE_YOLO=1
 python3 -m nextwin
 ```
 
@@ -154,16 +185,13 @@ python3 -m nextwin
 
 ```
 Andrea-NexTwin/
-├── nextwin/                        # 核心 Python 包
-│   ├── server.py                   # FastAPI 服务 (REST + WebSocket)
-│   ├── task_parser.py              # 自然语言 → 10 步救援蓝图
-│   ├── world_model.py              # 物理世界模型状态机
-│   ├── executor.py                 # RescueExecutor 救援流水线
-│   ├── observation.py              # 结构化观察 JSON
-│   ├── rule_engine.py              # turn → forward → stop → push
-│   ├── models.py                   # RescuePhase / ActionPlan 等
-│   ├── config.py                   # G1 传感器与阶段配置
-│   ├── rtv/                        # RTV 感知管线
+├── nextwin/
+│   ├── vision/                     # Layer 2: G1 相机四向切分
+│   │   └── pipeline.py
+│   ├── perception/                 # Layer 3: YOLO 检测
+│   ├── control/                    # Layer 5: 运动控制（你来实现）
+│   ├── config.py                   # G1 / YOLO 配置
+│   ├── rtv/                        # Layer 4: RTV 融合管线
 │   │   ├── pipeline.py             # 感知 → 切分 → YOLO → 观察
 │   │   ├── lidar_processor.py      # 点云 → BEV + 四向视图
 │   │   ├── panoramic.py            # 相机四向切分

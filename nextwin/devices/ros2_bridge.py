@@ -102,13 +102,36 @@ class UnitreeROS2Bridge:
         self._spin_thread.start()
         return True
 
+    def grab_camera(self) -> VisionFrame | None:
+        """Return latest G1 camera frame (no LiDAR required)."""
+        deadline = time.time() + min(self.timeout, 3.0)
+        while time.time() < deadline:
+            with self._lock:
+                img = self._latest_image
+            if img is not None and img.size > 0:
+                return VisionFrame(
+                    image=img.copy(),
+                    timestamp=time.time(),
+                    source=f"g1_ros2:{self.camera_topic}",
+                    width=img.shape[1],
+                    height=img.shape[0],
+                )
+            time.sleep(0.05)
+        return None
+
     def grab_scan(self) -> SensorScan | None:
         deadline = time.time() + self.timeout
         while time.time() < deadline:
             with self._lock:
                 pts = self._latest_points
                 img = self._latest_image
-            if pts is not None and len(pts) > 100:
+            has_lidar = pts is not None and len(pts) > 100
+            has_camera = img is not None and img.size > 0
+            if has_lidar or has_camera:
+                if pts is None or len(pts) <= 100:
+                    from nextwin.devices.mock_sensor import MockUnitreeSensor
+
+                    pts = MockUnitreeSensor._generate_lidar_points()
                 if img is None:
                     img = np.zeros((720, 1280, 3), dtype=np.uint8)
                 return SensorScan(

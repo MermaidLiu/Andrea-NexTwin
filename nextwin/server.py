@@ -44,6 +44,7 @@ async def broadcast(message: dict[str, Any]) -> None:
 async def lifespan(_app: FastAPI):
     yield
     executor.cancel()
+    rtv.release()
 
 
 app = FastAPI(
@@ -68,9 +69,10 @@ async def get_status():
                 "topic": rtv.sensor.status.get("lidar_topic", "/utlidar/cloud"),
             },
             "vision": {
-                "status": "ready",
+                "status": rtv.sensor.status.get("ros2", "mock"),
                 "model": "RealSense D435i",
                 "topic": rtv.sensor.status.get("camera_topic", "/camera/color/image_raw"),
+                "source": rtv.last_result.get("sensor", {}).get("vision_source", ""),
             },
             "rtv": {"status": "ready", **rtv.status},
             "rule_engine": {"status": "ready", "version": "v1.0"},
@@ -118,6 +120,30 @@ async def cancel():
 @app.get("/api/v1/sensor/status")
 async def sensor_status():
     return rtv.sensor.status
+
+
+@app.get("/api/v1/camera/preview")
+async def camera_preview():
+    """G1 RealSense D435i live frame + 4-view split."""
+    data = rtv.capture_camera_preview()
+    return {
+        "source": data.get("camera_source"),
+        "width": data.get("width"),
+        "height": data.get("height"),
+        "frame_b64": data.get("frame_b64"),
+        "split_views": data.get("split_views"),
+        "sensor_mode": rtv.sensor.mode,
+        "detector": rtv.detector.status,
+    }
+
+
+@app.get("/api/v1/vision/status")
+async def vision_status():
+    return {
+        "vision": rtv.vision.status,
+        "detector": rtv.detector.status,
+        "sensor": rtv.sensor.status,
+    }
 
 
 @app.post("/api/v1/sensor/scan")

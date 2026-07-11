@@ -1,4 +1,4 @@
-"""RTV pipeline — Unitree LiDAR+Vision → 4-view → YOLO → observation."""
+"""RTV pipeline — G1 LiDAR + Camera → 4-view → YOLO → observation."""
 
 from __future__ import annotations
 
@@ -6,14 +6,24 @@ from typing import Any
 
 from nextwin.devices.unitree_bridge import UnitreeSensorBridge
 from nextwin.observation import build_observation, observation_to_dict
-from nextwin.rtv.detector import YOLODetector
+from nextwin.perception import YOLODetector
 from nextwin.rtv.lidar_processor import LidarProcessor
 from nextwin.rule_engine import action_plan_to_dict, plan_actions
+from nextwin.vision.pipeline import VisionPipeline
 
 
 class RTVPipeline:
+    """Layered pipeline:
+
+    1. sensor   — G1 Livox + RealSense (ROS2 / SDK2 / mock)
+    2. vision   — 4-view split from G1 camera frame
+    3. perception — YOLO on each view (enabled by default)
+    4. control  — RescueExecutor / G1Controller (separate module)
+    """
+
     def __init__(self) -> None:
         self.sensor = UnitreeSensorBridge()
+        self.vision = VisionPipeline()
         self.lidar = LidarProcessor()
         self.detector = YOLODetector()
         self.last_result: dict[str, Any] = {}
@@ -21,27 +31,33 @@ class RTVPipeline:
     @property
     def status(self) -> dict[str, str]:
         return {
-            "engine": "RTV · G1 Livox Mid360 + D435i",
+            "engine": "RTV · G1 Livox Mid360 + RealSense D435i",
             "detector": self.detector.mode,
+            "detector_model": self.detector.model_path,
             "sensor": self.sensor.status.get("mode", "mock"),
+            "camera_topic": self.sensor.status.get("camera_topic", ""),
             "views": "4-way (front/back/left/right)",
+            **self.detector.status,
         }
 
-    def run_full_analysis(self) -> dict[str, Any]:
-        """Steps 3-7: Unitree sensing → split → YOLO → observation → rule engine."""
-        scan = self.sensor.scan_with_retry()
+    def _split_views(self, scan) -> dict[str, Any]:
+        """G1 camera → 4 views; LiDAR BEV merged into front when available."""
+        camera_views = self.vision.split_views(scan.vision.image)
+        if scan.mode in ("ros2", "sdk") and scan.lidar.point_count > 0:
+            lidar_views = self.lidar.split_4_views(scan.lidar.points)
+            return self.lidar.merge_with_vision(lidar_views, scan.vision.image)
+        if scan.mode == "mock":
+            lidar_views = self.lidar.split_4_views(scan.lidar.points)
+            return self.lidar.merge_with_vision(lidar_views, scan.vision.image)
+        return camera_views
 
-        # Step 3: LiDAR BEV + camera preview
+    def run_full_analysis(self) -> dict[str, Any]:
+        scan = self.sensor.scan_with_retry()
         bev = self.lidar.bev_preview(scan.lidar.points)
         lidar_stats = self.lidar.lidar_stats(scan.lidar.points)
-
-        # Step 4: 4-directional split (lidar + vision fusion)
-        lidar_views = self.lidar.split_4_views(scan.lidar.points)
-        views_img = self.lidar.merge_with_vision(lidar_views, scan.vision.image)
-
+        views_img = self._split_views(scan)
         view_thumbs = {name: self.lidar.encode_thumbnail(img) for name, img in views_img.items()}
 
-        # Step 5: YOLO per view
         all_detections: list[dict[str, Any]] = []
         views_dets: dict[str, list[dict[str, Any]]] = {}
         for view_name, img in views_img.items():
@@ -53,7 +69,10 @@ class RTVPipeline:
             views_dets[view_name] = dets
             all_detections.extend(dets)
 
-        if not any(d.get("class") == "mini_pi" for d in all_detections):
+        # mock 补全仅当 YOLO 未启用或未检出目标
+        if self.detector.mode == "mock" and not any(
+            d.get("class") == "mini_pi" for d in all_detections
+        ):
             front_img = views_img["front"]
             mock = self.detector._detect_mock(front_img)
             for d in mock:
@@ -69,14 +88,17 @@ class RTVPipeline:
             target_det = {
                 "class": "mini_pi",
                 "label": "Mini Pi (被压)",
-                "confidence": 0.88,
+                "confidence": 0.0,
                 "bbox": [200, 250, 440, 520],
                 "scene_position": [-2.5, 0.15, -1.8],
             }
 
         observation = build_observation(
-            views_dets, target_view, target_det, self.detector.mode,
-            sensor_source="unitree_lidar_vision",
+            views_dets,
+            target_view,
+            target_det,
+            self.detector.mode,
+            sensor_source="unitree_g1_lidar_vision",
             lidar_stats=lidar_stats,
             sensor_mode=scan.mode,
         )
@@ -97,16 +119,38 @@ class RTVPipeline:
             "views_detections": views_dets,
             "all_detections": all_detections,
             "target_view": target_view,
-            "observation": observation_to_dict(observation, extra={
-                "sensor_mode": scan.mode,
-                "lidar_stats": lidar_stats,
-            }),
+            "observation": observation_to_dict(
+                observation,
+                extra={
+                    "sensor_mode": scan.mode,
+                    "lidar_stats": lidar_stats,
+                    "vision_source": scan.vision.source,
+                    "detector": self.detector.mode,
+                },
+            ),
             "action_plan": action_plan_to_dict(action_plan),
             "detector_mode": self.detector.mode,
             "summary": (
-                f"[{scan.mode}] {target_view}方向雷达+视觉识别到 Mini Pi 被重物压住，"
-                f"置信度 {target_det.get('confidence', 0):.0%}，点云 {scan.lidar.point_count} pts"
+                f"[G1/{scan.mode}] YOLO({self.detector.mode}) "
+                f"{target_view}方向识别 {target_det.get('label', '目标')}，"
+                f"置信度 {target_det.get('confidence', 0):.0%}，"
+                f"点云 {scan.lidar.point_count} pts"
             ),
         }
         self.last_result = result
         return result
+
+    def capture_camera_preview(self) -> dict[str, Any]:
+        """Live G1 RealSense preview + 4-view split."""
+        vf = self.sensor.grab_camera_frame()
+        if vf is None:
+            scan = self.sensor.scan()
+            vf = scan.vision
+            source = scan.vision.source
+        else:
+            source = vf.source
+        return self.vision.run_from_frame(vf.image, source=source)
+
+    def release(self) -> None:
+        self.vision.release()
+        self.sensor.release()
