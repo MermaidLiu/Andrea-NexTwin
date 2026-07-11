@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>API 文档 · NexTwin Studio</title>
+  <link rel="stylesheet" href="/static/css/landing.css" />
+  <style>
+    .docs-page { max-width: 860px; margin: 0 auto; padding: 40px 32px 80px; }
+    .docs-page h1 { font-size: 28px; margin-bottom: 8px; }
+    .docs-page .lead { color: var(--text-secondary); margin-bottom: 32px; }
+    .endpoint { background: var(--bg-card); border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 16px 20px; margin-bottom: 12px; }
+    .method { font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 4px; margin-right: 8px; }
+    .method-get { background: rgba(0,112,255,0.1); color: var(--brand-blue); }
+    .method-post { background: rgba(0,180,42,0.1); color: var(--color-success); }
+    .endpoint code { font-family: var(--mono); font-size: 14px; }
+    .endpoint p { font-size: 13px; color: var(--text-secondary); margin-top: 6px; }
+    pre { background: #161823; color: #E5E7EB; padding: 16px; border-radius: var(--radius-md); overflow-x: auto; font-size: 13px; margin-top: 16px; }
+  </style>
+</head>
+<body class="landing">
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="/" class="logo-link">
+        <div class="logo-mark">N</div>
+        <div class="logo-text"><strong>NexTwin Studio</strong><span>API 文档</span></div>
+      </a>
+      <div class="header-actions">
+        <a href="/studio" class="btn-brand btn-primary">进入 Studio</a>
+      </div>
+    </div>
+  </header>
+  <main class="docs-page">
+    <h1>API 文档</h1>
+    <p class="lead">REST + WebSocket 接口，Base URL: <code>http://localhost:8080</code></p>
+
+    <div class="endpoint"><span class="method method-get">GET</span><code>/api/v1/status</code><p>系统状态与组件健康</p></div>
+    <div class="endpoint"><span class="method method-post">POST</span><code>/api/v1/task</code><p>提交自然语言任务，返回 10 步蓝图</p></div>
+    <div class="endpoint"><span class="method method-post">POST</span><code>/api/v1/execute</code><p>启动救援执行流水线</p></div>
+    <div class="endpoint"><span class="method method-get">GET</span><code>/api/v1/camera/preview</code><p>G1 相机实时帧 + 四向切分</p></div>
+    <div class="endpoint"><span class="method method-post">POST</span><code>/api/v1/sensor/scan</code><p>完整 RTV 感知分析（YOLO + 规则引擎）</p></div>
+    <div class="endpoint"><span class="method method-get">GET</span><code>/api/v1/platform/stats</code><p>平台统计数据</p></div>
+    <p style="margin-top:8px;color:var(--text-secondary);font-size:13px">WebSocket: <code>ws://localhost:8080/ws</code></p>
+
+    <pre>curl -X POST http://localhost:8080/api/v1/task \
+  -H "Content-Type: application/json" \
+  -d '{"instruction": "执行无人救援任务..."}'</pre>
+  </main>
+</body>
+</html>

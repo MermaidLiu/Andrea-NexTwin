@@ -57,12 +57,15 @@ async function loadSystemStatus() {
   try {
     const res = await fetch('/api/v1/status');
     const data = await res.json();
-    const mode = data.components?.rtv?.sensor || 'ros2';
-    const detector = data.components?.rtv?.detector || 'yolo';
-    els.sensorTag.textContent = mode;
+    const mode = data.components?.rtv?.sensor || data.components?.platform_mode || 'ui';
+    const detector = data.components?.rtv?.detector || 'ui-demo';
+    els.sensorTag.textContent = mode === 'ui-only' ? 'UI Demo' : mode;
     els.yoloTag.textContent = detector;
+    const platformMode = data.components?.platform_mode || 'ui';
     document.getElementById('subtitle').textContent =
-      `G1 ${mode} · ${detector.toUpperCase()} · 规则引擎`;
+      platformMode === 'ui'
+        ? 'UI 演示模式 · 安装视觉库后启用 G1/YOLO'
+        : `G1 ${mode} · ${detector.toUpperCase()} · 规则引擎`;
   } catch (_) { /* ignore */ }
 }
 

@@ -1,2 +1,2 @@
-# YOLO 已合并至 requirements.txt
-# pip install -r requirements.txt
+# YOLO 检测 — 可选，依赖 requirements-vision.txt
+ultralytics>=8.0.0

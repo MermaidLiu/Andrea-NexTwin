@@ -90,50 +90,46 @@ flowchart TB
 
 ## 🚀 快速开始
 
-### 一键启动（G1 真机 + YOLO）
+### 一键启动（仅 UI，秒级安装）
 
 ```bash
 git clone https://github.com/MermaidLiu/Andrea-NexTwin.git
 cd Andrea-NexTwin
-chmod +x scripts/run_demo.sh
-
-# 连接 G1 并启动 ROS2（Ubuntu）
-source ~/unitree_ros2/setup.sh
+chmod +x scripts/run_demo.sh scripts/install_deps.sh
 ./scripts/run_demo.sh
 ```
 
-默认 `UNITREE_SENSOR_MODE=ros2`，订阅 G1 **RealSense D435i** 相机 + **Livox Mid360** 雷达，并对四向切分帧运行 **YOLO**。
+**默认只装 FastAPI 等 4 个包**，不装 OpenCV / YOLO / numpy。
+- 首页：http://localhost:8080
+- Studio：http://localhost:8080/studio（UI 演示模式，10 步流程可跑通）
 
-浏览器打开 **http://localhost:8080**，点击 **「刷新」** 预览 G1 相机画面。
-
-### 手动启动
+### 按需安装 G1 感知 + YOLO
 
 ```bash
-python3 -m venv .venv && source .venv/bin/activate
-chmod +x scripts/install_deps.sh
-./scripts/install_deps.sh
-source ~/unitree_ros2/setup.sh
+./scripts/install_vision.sh              # numpy + OpenCV
+pip3 install -r requirements-yolo.txt    # YOLO
+source ~/unitree_ros2/setup.sh           # G1 真机
 export UNITREE_SENSOR_MODE=ros2
 export NEXTWIN_ENABLE_YOLO=1
 python3 -m nextwin
 ```
 
-### macOS 安装报错（opencv-python wheel）
-
-若出现 `Failed to build installable wheels for opencv-python`：
+### 手动启动
 
 ```bash
-# 删除旧环境后重装（统一用 pip3）
-rm -rf .venv
-chmod +x scripts/install_deps.sh
-./scripts/install_deps.sh
+python3 -m venv .venv && source .venv/bin/activate
+pip3 install -r requirements.txt
+python3 -m nextwin
 ```
 
-脚本会使用 `opencv-python-headless` 预编译包，无需本地编译。手动安装：
+### macOS 安装报错（opencv-python wheel）
+
+**现在默认不会安装 OpenCV。** 若你主动运行 `./scripts/install_vision.sh` 仍报错：
 
 ```bash
+rm -rf .venv && ./scripts/install_deps.sh   # 先保证 UI 能跑
+# UI 能跑后再按需装视觉库
 pip3 install "numpy>=1.24.0,<2.0.0" "opencv-python-headless==4.8.1.78" --only-binary :all:
-pip3 install -r requirements.txt
 ```
 
 复制 `.env.g1.example` 可配置话题与 YOLO 模型路径。
@@ -221,9 +217,14 @@ Andrea-NexTwin/
 │       ├── g1_control.py           # G1 运动控制
 │       ├── g1_config.py            # G1 话题预设
 │       └── mock_sensor.py          # 合成 Livox + D435i 数据
-├── web/                            # NexTwin Studio 大屏前端
-│   ├── index.html
-│   ├── css/style.css
+├── web/
+│   ├── index.html                  # NexTwin Studio 首页
+│   ├── studio.html                 # 无人救援控制台
+│   ├── docs.html                   # API 文档页
+│   ├── css/
+│   │   ├── tokens.css              # 品牌色 Design Tokens
+│   │   ├── landing.css             # 首页样式
+│   │   └── studio.css              # 控制台样式
 │   └── js/
 │       ├── app.js                  # 主逻辑 + WebSocket
 │       └── scene3d.js              # Three.js 3D 场景

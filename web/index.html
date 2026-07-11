@@ -1,118 +1,205 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" class="auto-theme">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NexTwin 无人救援 · 大屏</title>
-  <link rel="stylesheet" href="/static/css/style.css" />
-  <script type="importmap">
-  {
-    "imports": {
-      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
-    }
-  }
-  </script>
+  <title>NexTwin Studio — 具身智能数字孪生平台</title>
+  <meta name="description" content="NexTwin Studio 星孪科技 — 面向开发者与用户的具身智能世界模型平台" />
+  <link rel="stylesheet" href="/static/css/landing.css" />
 </head>
-<body class="dashboard">
-  <header class="topbar">
-    <div class="brand">
-      <span class="logo">⬡</span>
-      <div>
-        <h1>NexTwin 具身智能无人救援</h1>
-        <p id="subtitle">G1 Livox + D435i · YOLO · 规则引擎</p>
+<body class="landing">
+
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="/" class="logo-link">
+        <div class="logo-mark">N</div>
+        <div class="logo-text">
+          <strong>NexTwin Studio</strong>
+          <span>星孪科技 · 具身智能数字孪生</span>
+        </div>
+      </a>
+
+      <nav class="main-nav" aria-label="主导航">
+        <a href="/" class="active">首页</a>
+        <a href="#product">产品能力</a>
+        <a href="#scenarios">解决方案</a>
+        <a href="#developers">开发者中心</a>
+        <a href="/docs" id="nav-docs">文档</a>
+        <a href="/workspace" class="tag-blue" style="margin-left:8px">进入工作台 →</a>
+      </nav>
+
+      <div class="header-actions">
+        <button class="theme-toggle" id="theme-toggle" title="切换主题" aria-label="切换深色/浅色">🌓</button>
+        <div class="user-chip" id="user-chip">
+          <div class="user-avatar" id="user-avatar">U</div>
+          <span id="user-id">游客</span>
+        </div>
       </div>
-    </div>
-    <div id="status-banner" class="status-banner-top">等待救援指令</div>
-    <div class="topbar-status">
-      <span id="conn-badge" class="badge badge-off">未连接</span>
-      <span id="sys-badge" class="badge badge-idle">待机</span>
     </div>
   </header>
 
-  <main class="dash-layout">
-    <!-- 左：指令 + 10步流程 -->
-    <aside class="dash-left">
-      <section class="card">
-        <h2>🚨 救援指令</h2>
-        <textarea id="instruction-input" rows="3"></textarea>
-        <div class="btn-row">
-          <button id="btn-parse" class="btn btn-primary">下达指令</button>
-          <button id="btn-run" class="btn btn-accent" disabled>▶ 启动救援</button>
-        </div>
-        <button id="btn-cancel" class="btn btn-ghost" disabled>中止任务</button>
-      </section>
-      <section class="card card-grow">
-        <h2>📋 10 步执行流程</h2>
-        <ul id="timeline" class="timeline timeline-10"></ul>
-      </section>
-    </aside>
+  <section class="hero">
+    <div class="hero-intro">
+      <h1>让机器人看懂世界，听懂任务</h1>
+      <p>
+        NexTwin Studio 是面向<strong>开发者</strong>与<strong>用户</strong>的具身智能数字孪生平台。
+        用自然语言驱动世界模型，在仿真中验证，安全部署至真实机器人。
+      </p>
+      <div class="hero-badges">
+        <span class="tag-blue">世界模型</span>
+        <span class="tag-purple">数字孪生</span>
+        <span class="tag-blue">开源 SDK</span>
+        <span class="tag-purple">REST API</span>
+      </div>
+    </div>
 
-    <!-- 中：视觉 + 3D -->
-    <section class="dash-center">
-      <div class="visual-row">
-        <div class="card card-panorama">
-          <h2>📡 G1 Livox Mid360 · 俯视图 <span id="sensor-tag" class="tag">G1 mock</span></h2>
-          <div id="panorama-view" class="panorama-box">
-            <div class="placeholder">等待雷达点云...</div>
-          </div>
+    <div class="hero-main" id="product">
+      <!-- 世界地图 -->
+      <div class="map-card">
+        <h2>🌍 全球部署亮点</h2>
+        <p class="map-sub">实时连接世界各地的 NexTwin 节点与机器人集群</p>
+        <div class="map-container" id="world-map">
+          <svg viewBox="0 0 800 400" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <defs>
+              <linearGradient id="oceanGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="rgba(0,112,255,0.06)"/>
+                <stop offset="100%" stop-color="rgba(144,48,240,0.06)"/>
+              </linearGradient>
+            </defs>
+            <rect width="800" height="400" fill="url(#oceanGrad)"/>
+            <!-- Simplified continents -->
+            <path fill="rgba(0,112,255,0.12)" stroke="rgba(0,112,255,0.2)" stroke-width="1"
+              d="M120,120 Q160,80 200,100 Q240,70 280,90 Q300,110 290,140 Q270,170 240,160 Q200,180 160,170 Q130,160 120,120Z"/>
+            <path fill="rgba(0,112,255,0.12)" stroke="rgba(0,112,255,0.2)" stroke-width="1"
+              d="M380,90 Q420,70 460,80 Q500,75 530,95 Q560,110 550,140 Q520,160 480,150 Q440,155 400,140 Q370,120 380,90Z"/>
+            <path fill="rgba(0,112,255,0.12)" stroke="rgba(0,112,255,0.2)" stroke-width="1"
+              d="M500,200 Q540,180 580,190 Q620,185 650,210 Q670,240 640,260 Q600,270 560,255 Q520,250 500,220 Q490,210 500,200Z"/>
+            <path fill="rgba(144,48,240,0.12)" stroke="rgba(144,48,240,0.2)" stroke-width="1"
+              d="M600,280 Q640,260 680,270 Q720,265 740,290 Q750,320 720,340 Q680,350 640,335 Q610,320 600,280Z"/>
+            <path fill="rgba(0,112,255,0.12)" stroke="rgba(0,112,255,0.2)" stroke-width="1"
+              d="M140,220 Q180,200 220,215 Q260,205 280,230 Q290,260 260,280 Q220,290 180,275 Q150,260 140,220Z"/>
+          </svg>
+          <!-- Dots injected by home.js -->
         </div>
-        <div class="card card-camera">
-          <h2>📷 G1 RealSense D435i
-            <button id="btn-camera-preview" class="btn-mini" type="button">刷新</button>
-          </h2>
-          <div id="camera-view" class="panorama-box camera-box">
-            <div class="placeholder">等待相机帧...</div>
-          </div>
-        </div>
-        <div class="card card-views">
-          <h2>🔲 四向切分 + YOLO <span id="yolo-tag" class="tag">yolo</span></h2>
-          <div class="quad-grid">
-            <div class="quad-cell" data-view="front"><span class="quad-label">前</span><div class="quad-img" id="view-front"></div></div>
-            <div class="quad-cell" data-view="right"><span class="quad-label">右</span><div class="quad-img" id="view-right"></div></div>
-            <div class="quad-cell" data-view="back"><span class="quad-label">后</span><div class="quad-img" id="view-back"></div></div>
-            <div class="quad-cell" data-view="left"><span class="quad-label">左</span><div class="quad-img" id="view-left"></div></div>
-          </div>
+        <div class="map-legend">
+          <span class="legend-item"><span class="legend-dot"></span> 生产部署节点</span>
+          <span class="legend-item"><span class="legend-dot purple"></span> 研发实验节点</span>
         </div>
       </div>
-      <div class="card card-scene">
-        <h2>🤖 3D 救援场景 · 宇树机器人</h2>
-        <div id="canvas-container" class="canvas-wrap">
-          <canvas id="scene-canvas"></canvas>
-          <div id="scene-overlay" class="scene-overlay hidden">
-            <div class="overlay-spinner"></div>
-            <p id="overlay-text">执行中...</p>
-          </div>
-        </div>
-        <div class="progress-wrap"><div id="progress-bar" class="progress-bar" style="width:0%"></div></div>
+
+      <!-- 使用场景 -->
+      <div class="scenarios-card" id="scenarios">
+        <h2>🎯 使用场景</h2>
+        <p class="sc-sub">覆盖具身智能从仿真到真机部署的全链路</p>
+        <ul class="scenario-list" id="scenario-list">
+          <li class="scenario-item featured active" data-scenario="rescue">
+            <strong><span class="scenario-icon">🚨</span> 无人救援 <span class="tag-purple">热门</span></strong>
+            <p>宇树 G1 + LiDAR + YOLO，语言驱动 10 步救援闭环</p>
+          </li>
+          <li class="scenario-item" data-scenario="inspection">
+            <strong><span class="scenario-icon">🔍</span> 智慧巡检</strong>
+            <p>数字孪生工位 + 异常检测 + 自主导航巡检</p>
+          </li>
+          <li class="scenario-item" data-scenario="maintenance">
+            <strong><span class="scenario-icon">🔧</span> 工业维护</strong>
+            <p>故障识别 → 3D 打印替换件 → 机器人自维护</p>
+          </li>
+          <li class="scenario-item" data-scenario="warehouse">
+            <strong><span class="scenario-icon">📦</span> 仓储物流</strong>
+            <p>多机器人协同搬运，世界模型统一调度</p>
+          </li>
+          <li class="scenario-item" data-scenario="simulation">
+            <strong><span class="scenario-icon">🌐</span> 数字孪生仿真</strong>
+            <p>Hyper3D 场景生成，仿真验证后安全迁移真机</p>
+          </li>
+          <li class="scenario-item" data-scenario="emergency">
+            <strong><span class="scenario-icon">🏥</span> 应急救援</strong>
+            <p>灾害现场感知、路径规划与远程遥操作</p>
+          </li>
+        </ul>
+        <a href="/workspace" class="btn-brand btn-primary" style="margin-top:16px;width:100%">开始配置 →</a>
       </div>
-    </section>
+    </div>
+  </section>
 
-    <!-- 右：JSON + 规则 + 结果 -->
-    <aside class="dash-right">
-      <section class="card">
-        <h2>📄 观察结果 JSON</h2>
-        <pre id="observation-json" class="code-block">// 步骤6生成...</pre>
-      </section>
-      <section class="card">
-        <h2>⚙️ 规则引擎 · 动作规划</h2>
-        <ul id="action-list" class="action-list"></ul>
-      </section>
-      <section class="card">
-        <h2>🦾 宇树执行状态</h2>
-        <ul id="robot-actions" class="action-list"></ul>
-      </section>
-      <section class="card card-result" id="result-panel">
-        <h2>🏆 任务执行结果</h2>
-        <div id="result-content" class="result-idle">等待任务完成...</div>
-      </section>
-      <section class="card card-log">
-        <h2>📝 日志</h2>
-        <ul id="log-list" class="log-list"></ul>
-      </section>
-    </aside>
-  </main>
+  <!-- 数据统计 -->
+  <section class="stats-section">
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-value" data-target="12847" data-suffix="">0</div>
+        <div class="stat-label">世界模型数量</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" data-target="36" data-suffix="">0</div>
+        <div class="stat-label">具身智能开源 SDK</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" data-target="892" data-suffix="">0</div>
+        <div class="stat-label">全球部署节点</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" data-target="4200" data-suffix="+">0</div>
+        <div class="stat-label">注册开发者</div>
+      </div>
+    </div>
+  </section>
 
-  <script type="module" src="/static/js/app.js"></script>
+  <!-- 三大入口 -->
+  <section class="cta-section">
+    <div class="cta-grid">
+      <div class="cta-card primary-card">
+        <div class="cta-icon">👤</div>
+        <h3>成为使用者</h3>
+        <p>无需编程，用自然语言描述任务，NexTwin 自动规划并在数字孪生中执行，一键部署到真实机器人。</p>
+        <a href="/workspace" class="btn-brand btn-primary btn-lg">立即使用</a>
+      </div>
+      <div class="cta-card purple-card">
+        <div class="cta-icon">💻</div>
+        <h3>成为开发者</h3>
+        <p>接入 NexTwin SDK，扩展世界模型、自定义感知管线与运动控制，发布你的具身智能应用。</p>
+        <a href="#developers" class="btn-brand btn-secondary btn-lg">开发者入驻</a>
+      </div>
+      <div class="cta-card">
+        <div class="cta-icon">⚡</div>
+        <h3>调用 API</h3>
+        <p>REST + WebSocket 标准接口，集成任务解析、感知分析、规则引擎到你的系统。</p>
+        <a href="/docs" class="btn-brand btn-ghost-light btn-lg">查看 API 文档</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- 双人群介绍 -->
+  <section class="audience-section" id="developers">
+    <div class="audience-grid">
+      <div class="audience-block">
+        <h2>👤 面向用户</h2>
+        <p>面向企业客户、场景运营者与非技术用户。通过 NexTwin Studio 控制台，用一句话驱动机器人完成复杂任务。</p>
+        <ul class="feature-list">
+          <li>自然语言任务下达，零代码操作</li>
+          <li>3D 数字孪生实时可视化</li>
+          <li>仿真验证后再部署真机，安全可控</li>
+          <li>救援、巡检、维护等场景模板开箱即用</li>
+        </ul>
+        <a href="/workspace" class="btn-brand btn-primary" style="margin-top:20px">进入工作台</a>
+      </div>
+      <div class="audience-block">
+        <h2>💻 面向开发者</h2>
+        <p>面向机器人工程师、AI 开发者与系统集成商。模块化架构，视觉、感知、控制分层解耦，灵活扩展。</p>
+        <ul class="feature-list">
+          <li>Python SDK + REST / WebSocket API</li>
+          <li>ROS2 / Unitree G1 即插即用</li>
+          <li>YOLO 感知层 + 规则引擎可替换</li>
+          <li>开源示例与完整 Demo 工程</li>
+        </ul>
+        <a href="https://github.com/MermaidLiu/Andrea-NexTwin" class="btn-brand btn-secondary" style="margin-top:20px" target="_blank" rel="noopener">GitHub 仓库</a>
+      </div>
+    </div>
+  </section>
+
+  <footer class="site-footer">
+    <p>© 2026 NexTwin Studio · 星孪科技 · Andrea-NexTwin Team · MIT License</p>
+  </footer>
+
+  <script src="/static/js/home.js"></script>
 </body>
 </html>

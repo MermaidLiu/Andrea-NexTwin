@@ -1,20 +1,9 @@
-# Andrea-NexTwin dependencies
+# NexTwin Studio — 最小依赖（仅 UI + API，秒级安装）
 fastapi>=0.110.0
 uvicorn[standard]>=0.27.0
 pydantic>=2.0.0
 pyyaml>=6.0
-httpx>=0.27.0
-python-multipart>=0.0.9
 
-# G1 vision + LiDAR processing
-numpy>=1.24.0,<2.0.0
-Pillow>=10.0.0
-# headless 在 macOS 上有预编译 wheel，无需本地编译（见 scripts/install_deps.sh）
-opencv-python-headless==4.8.1.78
-
-# YOLO detection on G1 camera frames
-ultralytics>=8.0.0
-
-# G1 ROS2 (Ubuntu + unitree_ros2):
-#   source ~/unitree_ros2/setup.sh
-#   export UNITREE_SENSOR_MODE=ros2
+# 可选扩展（按需安装，见 scripts/install_vision.sh）:
+#   requirements-vision.txt  — numpy / OpenCV / G1 感知
+#   requirements-yolo.txt    — YOLO 检测

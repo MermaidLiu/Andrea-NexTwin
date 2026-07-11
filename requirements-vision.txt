@@ -1,0 +1,4 @@
+# G1 视觉感知（真机 / Mock 点云渲染）— 可选
+numpy>=1.24.0,<2.0.0
+Pillow>=10.0.0
+opencv-python-headless==4.8.1.78

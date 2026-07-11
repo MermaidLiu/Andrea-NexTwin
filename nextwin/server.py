@@ -8,22 +8,20 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from nextwin import __version__
 from nextwin.config import RESCUE_DEFAULT_INSTRUCTION, WEB_DIR
-from nextwin.executor import RescueExecutor
 from nextwin.models import ExecuteRequest, SystemStatus, TaskRequest, TaskResponse
-from nextwin.rtv.pipeline import RTVPipeline
+from nextwin.runtime import Runtime
 from nextwin.task_parser import new_task_id, parse_instruction
 from nextwin.world_model import WorldModel
 
 world = WorldModel()
-rtv = RTVPipeline()
-executor = RescueExecutor(world, rtv)
+runtime = Runtime(world)
 ws_clients: set[WebSocket] = set()
 current_task_id: str | None = None
 
@@ -43,15 +41,16 @@ async def broadcast(message: dict[str, Any]) -> None:
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     yield
-    executor.cancel()
-    rtv.release()
+    runtime.release()
 
 
 app = FastAPI(
-    title="NexTwin Rescue",
-    description="具身智能无人救援 — RTV + YOLO + 规则引擎",
+    title="NexTwin Studio",
+    description="具身智能数字孪生平台",
     version=__version__,
     lifespan=lifespan,
+    docs_url="/api/swagger",
+    redoc_url=None,
 )
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
@@ -60,24 +59,8 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], all
 async def get_status():
     return SystemStatus(
         status=world.state.status,
-        message=world.state.message,
-        components={
-            "robot": {"status": "G1", "model": "Unitree G1"},
-            "lidar": {
-                "status": rtv.sensor.status.get("ros2", "mock"),
-                "model": "Livox Mid360",
-                "topic": rtv.sensor.status.get("lidar_topic", "/utlidar/cloud"),
-            },
-            "vision": {
-                "status": rtv.sensor.status.get("ros2", "mock"),
-                "model": "RealSense D435i",
-                "topic": rtv.sensor.status.get("camera_topic", "/camera/color/image_raw"),
-                "source": rtv.last_result.get("sensor", {}).get("vision_source", ""),
-            },
-            "rtv": {"status": "ready", **rtv.status},
-            "rule_engine": {"status": "ready", "version": "v1.0"},
-            "g1_control": executor.g1.status,
-        },
+        message=world.state.message or f"NexTwin Studio ({runtime.mode} 模式)",
+        components=runtime.status_components,
     )
 
 
@@ -98,57 +81,60 @@ async def create_task(req: TaskRequest):
 
 @app.post("/api/v1/execute")
 async def execute_task(req: ExecuteRequest | None = None):
-    if executor.is_running:
+    if runtime.executor.is_running:
         return {"error": "already running"}
     if not world.state.blueprint:
         blueprint, _ = await parse_instruction(RESCUE_DEFAULT_INSTRUCTION)
         world.load_blueprint(blueprint)
 
     async def _run():
-        await executor.run(world.state.blueprint, broadcast)
+        await runtime.executor.run(world.state.blueprint, broadcast)
 
     asyncio.create_task(_run())
-    return {"status": "started", "task_id": current_task_id}
+    return {"status": "started", "task_id": current_task_id, "mode": runtime.mode}
 
 
 @app.post("/api/v1/execute/cancel")
 async def cancel():
-    executor.cancel()
+    runtime.executor.cancel()
     return {"status": "cancelling"}
 
 
 @app.get("/api/v1/sensor/status")
 async def sensor_status():
-    return rtv.sensor.status
+    if runtime.rtv:
+        return runtime.rtv.sensor.status
+    return {"mode": "ui-only", "note": "安装 requirements-vision.txt 启用 G1 感知"}
 
 
 @app.get("/api/v1/camera/preview")
 async def camera_preview():
-    """G1 RealSense D435i live frame + 4-view split."""
-    data = rtv.capture_camera_preview()
+    if not runtime.rtv:
+        return {"mode": "ui-only", "frame_b64": "", "split_views": {}, "note": "UI 模式，无相机数据"}
+    data = runtime.rtv.capture_camera_preview()
     return {
         "source": data.get("camera_source"),
         "width": data.get("width"),
         "height": data.get("height"),
         "frame_b64": data.get("frame_b64"),
         "split_views": data.get("split_views"),
-        "sensor_mode": rtv.sensor.mode,
-        "detector": rtv.detector.status,
+        "sensor_mode": runtime.rtv.sensor.mode,
+        "detector": runtime.rtv.detector.status,
     }
 
 
 @app.get("/api/v1/vision/status")
 async def vision_status():
-    return {
-        "vision": rtv.vision.status,
-        "detector": rtv.detector.status,
-        "sensor": rtv.sensor.status,
-    }
+    if runtime.rtv:
+        return {"vision": runtime.rtv.vision.status, "detector": runtime.rtv.detector.status, "sensor": runtime.rtv.sensor.status}
+    return {"mode": "ui-only", "detector": {"mode": "ui-demo"}}
 
 
 @app.post("/api/v1/sensor/scan")
 async def sensor_scan():
-    result = rtv.run_full_analysis()
+    if not runtime.rtv:
+        raise HTTPException(503, "感知模块未安装。运行: ./scripts/install_vision.sh")
+    result = runtime.rtv.run_full_analysis()
     world.apply_rtv_result(result)
     await broadcast({"type": "sensor_ready", "sensor": result.get("sensor"), "state": world.snapshot().model_dump()})
     return result
@@ -170,10 +156,7 @@ async def get_action_plan():
     plan = world.state.action_plan
     if not plan:
         return {}
-    return {
-        "rule_version": plan.rule_version,
-        "actions": [a.model_dump() for a in plan.actions],
-    }
+    return {"rule_version": plan.rule_version, "actions": [a.model_dump() for a in plan.actions]}
 
 
 @app.websocket("/ws")
@@ -192,9 +175,29 @@ async def ws_endpoint(ws: WebSocket):
         ws_clients.discard(ws)
 
 
+@app.get("/api/v1/platform/stats")
+async def platform_stats():
+    return {"world_models": 12847, "sdk_packages": 36, "deploy_nodes": 892, "developers": 4200}
+
+
 @app.get("/")
 async def index():
     return FileResponse(WEB_DIR / "index.html")
+
+
+@app.get("/workspace")
+async def workspace():
+    return FileResponse(WEB_DIR / "workspace.html")
+
+
+@app.get("/studio")
+async def studio():
+    return FileResponse(WEB_DIR / "studio.html")
+
+
+@app.get("/docs")
+async def docs_page():
+    return FileResponse(WEB_DIR / "docs.html")
 
 
 if Path(WEB_DIR).exists():
