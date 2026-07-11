@@ -8,7 +8,7 @@ from typing import Any
 
 import numpy as np
 
-from nextwin.config import ROOT_DIR, YOLO_CONF, YOLO_DEVICE, YOLO_MODEL, YOLO_ENABLE
+from nextwin.config import ROOT_DIR, YOLO_CONF, YOLO_DEVICE, YOLO_MODEL, YOLO_ENABLE, YOLO_COCO_DEMO
 
 RESCUE_TARGETS = {
     "mini_pi": {"label": "Mini Pi (被压)", "priority": 1, "color": "#f97316", "is_target": True},
@@ -16,7 +16,7 @@ RESCUE_TARGETS = {
     "person": {"label": "人员", "priority": 1, "color": "#ef4444", "is_target": True},
 }
 
-# COCO / custom alias → rescue class
+# 自定义模型类别名
 CLASS_ALIASES = {
     "mini pi": "mini_pi",
     "minipi": "mini_pi",
@@ -25,6 +25,33 @@ CLASS_ALIASES = {
     "heavy debris": "heavy_debris",
     "debris": "heavy_debris",
     "person": "person",
+}
+
+# COCO yolov8n 演示映射 — 无「纸盒」类，用近义物代替
+# Mini Pi 替身：小方块/手机；重物替身：行李箱/椅子/背包等
+COCO_DEMO_ALIASES = {
+    # → Mini Pi（被压目标）
+    "cell phone": "mini_pi",
+    "cell_phone": "mini_pi",
+    "book": "mini_pi",
+    "mouse": "mini_pi",
+    "remote": "mini_pi",
+    "laptop": "mini_pi",
+    "keyboard": "mini_pi",
+    # → 重物（压住目标的物体）
+    "suitcase": "heavy_debris",      # 最接近「箱子/纸盒」
+    "backpack": "heavy_debris",
+    "handbag": "heavy_debris",
+    "chair": "heavy_debris",
+    "dining table": "heavy_debris",
+    "dining_table": "heavy_debris",
+    "couch": "heavy_debris",
+    "potted plant": "heavy_debris",
+    "potted_plant": "heavy_debris",
+    "tv": "heavy_debris",
+    "microwave": "heavy_debris",
+    "oven": "heavy_debris",
+    "refrigerator": "heavy_debris",
 }
 
 
@@ -94,7 +121,15 @@ class YOLODetector:
 
     def _normalize_class(self, cls_name: str) -> str:
         key = cls_name.lower().strip().replace("-", "_")
-        return CLASS_ALIASES.get(key, key)
+        if key in CLASS_ALIASES:
+            return CLASS_ALIASES[key]
+        if YOLO_COCO_DEMO and key in COCO_DEMO_ALIASES:
+            return COCO_DEMO_ALIASES[key]
+        # 兼容 COCO 带空格类名
+        spaced = cls_name.lower().strip()
+        if YOLO_COCO_DEMO and spaced in COCO_DEMO_ALIASES:
+            return COCO_DEMO_ALIASES[spaced]
+        return key
 
     def _detect_yolo(self, image: np.ndarray) -> list[dict[str, Any]]:
         results = self._model.predict(
@@ -125,6 +160,7 @@ class YOLODetector:
                     "is_target": meta["is_target"],
                     "priority": meta["priority"],
                     "raw_class": raw_name,
+                    "demo_mapped": cls_name != raw_name.lower().replace("-", "_"),
                 })
         return detections
 
@@ -157,8 +193,12 @@ class YOLODetector:
         return detections
 
     def find_rescue_target(self, all_detections: list[dict[str, Any]]) -> tuple[str, dict[str, Any] | None]:
+        # 优先 Mini Pi，其次其他 is_target（如 person）
         for d in all_detections:
-            if d.get("class") == "mini_pi" or d.get("is_target"):
+            if d.get("class") == "mini_pi":
+                return d.get("view", "front"), d
+        for d in all_detections:
+            if d.get("is_target"):
                 return d.get("view", "front"), d
         for d in all_detections:
             if d.get("view") == "front":
