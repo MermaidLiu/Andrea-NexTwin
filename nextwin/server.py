@@ -180,6 +180,20 @@ async def platform_stats():
     return {"world_models": 12847, "sdk_packages": 36, "deploy_nodes": 892, "developers": 4200}
 
 
+# ── Billing API ──
+
+@app.get("/api/v1/billing/plans")
+async def billing_plans():
+    from nextwin.billing import get_plans
+    return get_plans()
+
+
+@app.get("/api/v1/billing/usage")
+async def billing_usage():
+    from nextwin.billing import get_usage_mock
+    return get_usage_mock()
+
+
 # ── Developer portal API ──
 
 @app.get("/api/v1/developer/sdk/list")

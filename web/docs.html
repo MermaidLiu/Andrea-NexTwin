@@ -3,56 +3,200 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>API 文档 · NexTwin Studio</title>
-  <link rel="stylesheet" href="/static/css/landing.css" />
-  <style>
-    .docs-page { max-width: 860px; margin: 0 auto; padding: 40px 32px 80px; }
-    .docs-page h1 { font-size: 28px; margin-bottom: 8px; }
-    .docs-page .lead { color: var(--text-secondary); margin-bottom: 32px; }
-    .endpoint { background: var(--bg-card); border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 16px 20px; margin-bottom: 12px; }
-    .method { font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 4px; margin-right: 8px; }
-    .method-get { background: rgba(0,112,255,0.1); color: var(--brand-blue); }
-    .method-post { background: rgba(0,180,42,0.1); color: var(--color-success); }
-    .endpoint code { font-family: var(--mono); font-size: 14px; }
-    .endpoint p { font-size: 13px; color: var(--text-secondary); margin-top: 6px; }
-    pre { background: #161823; color: #E5E7EB; padding: 16px; border-radius: var(--radius-md); overflow-x: auto; font-size: 13px; margin-top: 16px; }
-  </style>
+  <title>API 平台 · NexTwin Studio</title>
+  <link rel="stylesheet" href="/static/css/api.css" />
 </head>
-<body class="landing">
-  <header class="site-header">
-    <div class="header-inner">
+<body class="api-page">
+
+  <header class="api-header">
+    <div class="api-header-inner">
       <a href="/" class="logo-link">
         <div class="logo-mark">N</div>
-        <div class="logo-text"><strong>NexTwin Studio</strong><span>API 文档</span></div>
+        <div class="logo-text"><strong>NexTwin Studio</strong><span>API 平台</span></div>
       </a>
-      <div class="header-actions">
-        <a href="/developer" class="btn-brand btn-secondary" style="margin-right:8px">开发者中心</a>
-        <a href="/studio" class="btn-brand btn-primary">进入 Studio</a>
+      <nav class="api-header-nav">
+        <a href="/docs" class="active">API</a>
+        <a href="/developer">开发者中心</a>
+        <a href="/workspace">工作台</a>
+        <a href="/studio">Studio</a>
+      </nav>
+      <div class="api-header-right">
+        <div class="balance-chip">
+          余额 <strong id="header-balance">¥ —</strong>
+        </div>
+        <a href="/developer" class="btn-brand btn-secondary btn-sm">充值</a>
       </div>
     </div>
   </header>
-  <main class="docs-page">
-    <h1>API 文档</h1>
-    <p class="lead">REST + WebSocket 接口，Base URL: <code>http://localhost:8080</code></p>
 
-    <div class="endpoint"><span class="method method-get">GET</span><code>/api/v1/status</code><p>系统状态与组件健康</p></div>
-    <div class="endpoint"><span class="method method-post">POST</span><code>/api/v1/task</code><p>提交自然语言任务，返回 10 步蓝图</p></div>
-    <div class="endpoint"><span class="method method-post">POST</span><code>/api/v1/execute</code><p>启动救援执行流水线</p></div>
-    <div class="endpoint"><span class="method method-get">GET</span><code>/api/v1/camera/preview</code><p>G1 相机实时帧 + 四向切分</p></div>
-    <div class="endpoint"><span class="method method-post">POST</span><code>/api/v1/sensor/scan</code><p>完整 RTV 感知分析（YOLO + 规则引擎）</p></div>
-    <div class="endpoint"><span class="method method-get">GET</span><code>/api/v1/platform/stats</code><p>平台统计数据</p></div>
+  <div class="api-shell">
+    <aside class="api-sidebar">
+      <div class="sidebar-group">
+        <div class="sidebar-group-title">平台</div>
+        <button class="sidebar-link active" data-section="overview">概览</button>
+        <button class="sidebar-link" data-section="pricing">模型与定价</button>
+        <button class="sidebar-link" data-section="usage">用量统计</button>
+        <button class="sidebar-link" data-section="apikey">API Key</button>
+      </div>
+      <div class="sidebar-group">
+        <div class="sidebar-group-title">文档</div>
+        <button class="sidebar-link" data-section="docs-core">核心接口</button>
+        <button class="sidebar-link" data-section="docs-dev">开发者接口</button>
+        <button class="sidebar-link" data-section="docs-ws">WebSocket</button>
+      </div>
+    </aside>
 
-    <h2 style="margin:32px 0 12px;font-size:18px">开发者中心</h2>
-    <div class="endpoint"><span class="method method-post">POST</span><code>/api/v1/developer/sdk/upload</code><p>上传 SDK（multipart: name, version, robot, description, file）</p></div>
-    <div class="endpoint"><span class="method method-get">GET</span><code>/api/v1/developer/sdk/list</code><p>我的 SDK 列表</p></div>
-    <div class="endpoint"><span class="method method-post">POST</span><code>/api/v1/developer/worldmodel/upload</code><p>上传世界模型（multipart: name, publish_type, scene, fidelity, physics, description, file）</p></div>
-    <div class="endpoint"><span class="method method-get">GET</span><code>/api/v1/developer/worldmodel/list</code><p>我的世界模型列表</p></div>
-    <p style="margin-top:8px;color:var(--text-secondary);font-size:13px">页面入口: <a href="/developer">/developer</a></p>
-    <p style="margin-top:8px;color:var(--text-secondary);font-size:13px">WebSocket: <code>ws://localhost:8080/ws</code></p>
+    <main class="api-main">
 
-    <pre>curl -X POST http://localhost:8080/api/v1/task \
+      <!-- 概览 -->
+      <section class="api-section active" id="section-overview">
+        <div class="section-head">
+          <h1>API 概览</h1>
+          <p>REST + WebSocket 接口，Base URL: <code>http://localhost:8080</code></p>
+        </div>
+        <div class="usage-cards" id="overview-stats"></div>
+        <div class="rules-box">
+          <h3>快速开始</h3>
+          <ol>
+            <li>在「API Key」面板创建密钥，请求头携带 <code>Authorization: Bearer nx_xxx</code></li>
+            <li>选择计费方式：包月套餐（固定配额）或按次计费（余额扣减）</li>
+            <li>调用 <code>POST /api/v1/task</code> 提交任务，<code>POST /api/v1/execute</code> 启动执行</li>
+          </ol>
+        </div>
+        <pre class="code-block">curl -X POST http://localhost:8080/api/v1/task \
+  -H "Authorization: Bearer nx_your_api_key" \
   -H "Content-Type: application/json" \
   -d '{"instruction": "执行无人救援任务..."}'</pre>
-  </main>
+      </section>
+
+      <!-- 定价 -->
+      <section class="api-section" id="section-pricing">
+        <div class="section-head">
+          <h1>模型与定价</h1>
+          <p>支持包月套餐与按次计费两种模式，超出套餐配额自动按次扣费</p>
+        </div>
+
+        <div class="billing-toggle">
+          <button type="button" class="active" data-billing="monthly">包月套餐</button>
+          <button type="button" data-billing="pay_per_use">按次计费</button>
+        </div>
+
+        <div class="billing-panel active" id="panel-monthly">
+          <div class="plans-grid" id="plans-grid"></div>
+        </div>
+
+        <div class="billing-panel" id="panel-pay-per-use">
+          <div class="pricing-table-wrap">
+            <table class="pricing-table">
+              <thead>
+                <tr>
+                  <th>接口</th>
+                  <th>说明</th>
+                  <th>单价</th>
+                </tr>
+              </thead>
+              <tbody id="pricing-tbody"></tbody>
+            </table>
+          </div>
+          <div class="calc-box">
+            <h3>费用估算器</h3>
+            <div id="calc-rows"></div>
+            <div class="calc-total">预估月费用：<span id="calc-total">¥0.00</span></div>
+          </div>
+        </div>
+
+        <div class="rules-box" style="margin-top:24px">
+          <h3>扣费规则</h3>
+          <ol id="deduction-rules"></ol>
+        </div>
+      </section>
+
+      <!-- 用量 -->
+      <section class="api-section" id="section-usage">
+        <div class="section-head">
+          <h1>用量统计</h1>
+          <p id="usage-period">当前账期 —</p>
+        </div>
+        <div class="usage-cards" id="usage-cards"></div>
+        <div class="pricing-table-wrap">
+          <table class="charges-table">
+            <thead><tr><th>时间</th><th>接口</th><th>扣费</th></tr></thead>
+            <tbody id="charges-tbody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- API Key -->
+      <section class="api-section" id="section-apikey">
+        <div class="section-head">
+          <h1>API Key</h1>
+          <p>密钥用于 REST / WebSocket 鉴权，请妥善保管</p>
+        </div>
+        <div class="key-panel">
+          <div class="key-row">
+            <code id="api-key-display">nx_live_••••••••••••7f2a</code>
+            <button type="button" class="btn-brand btn-ghost-light btn-sm" id="btn-copy-key">复制</button>
+            <button type="button" class="btn-brand btn-secondary btn-sm" id="btn-regen-key">重新生成</button>
+          </div>
+          <div class="key-meta">
+            <div>创建时间：2026-07-01 10:00</div>
+            <div>当前套餐：<strong id="key-plan-name">开发者版</strong>（包月）</div>
+            <div>并发限制：50 QPS · Webhook：已启用</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 核心接口文档 -->
+      <section class="api-section" id="section-docs-core">
+        <div class="section-head">
+          <h1>核心接口</h1>
+          <p>任务编排、执行与感知</p>
+        </div>
+        <div class="endpoint-list">
+          <div class="endpoint"><span class="method method-get">GET</span><code>/api/v1/status</code><p>系统状态与组件健康</p></div>
+          <div class="endpoint"><span class="method method-post">POST</span><code>/api/v1/task</code><p>提交自然语言任务，返回 10 步蓝图</p></div>
+          <div class="endpoint"><span class="method method-post">POST</span><code>/api/v1/execute</code><p>启动救援执行流水线</p></div>
+          <div class="endpoint"><span class="method method-post">POST</span><code>/api/v1/execute/cancel</code><p>取消正在执行的任务</p></div>
+          <div class="endpoint"><span class="method method-get">GET</span><code>/api/v1/camera/preview</code><p>G1 相机实时帧 + 四向切分</p></div>
+          <div class="endpoint"><span class="method method-post">POST</span><code>/api/v1/sensor/scan</code><p>完整 RTV 感知分析（YOLO + 规则引擎）</p></div>
+          <div class="endpoint"><span class="method method-get">GET</span><code>/api/v1/world</code><p>世界模型快照</p></div>
+          <div class="endpoint"><span class="method method-get">GET</span><code>/api/v1/platform/stats</code><p>平台统计数据</p></div>
+        </div>
+      </section>
+
+      <!-- 开发者接口 -->
+      <section class="api-section" id="section-docs-dev">
+        <div class="section-head">
+          <h1>开发者接口</h1>
+          <p>SDK 与世界模型上传 · 页面入口 <a href="/developer">/developer</a></p>
+        </div>
+        <div class="endpoint-list">
+          <div class="endpoint"><span class="method method-post">POST</span><code>/api/v1/developer/sdk/upload</code><p>上传 SDK（multipart）</p></div>
+          <div class="endpoint"><span class="method method-get">GET</span><code>/api/v1/developer/sdk/list</code><p>我的 SDK 列表</p></div>
+          <div class="endpoint"><span class="method method-delete">DELETE</span><code>/api/v1/developer/sdk/{id}</code><p>删除 SDK</p></div>
+          <div class="endpoint"><span class="method method-post">POST</span><code>/api/v1/developer/worldmodel/upload</code><p>上传世界模型</p></div>
+          <div class="endpoint"><span class="method method-get">GET</span><code>/api/v1/developer/worldmodel/list</code><p>我的世界模型列表</p></div>
+          <div class="endpoint"><span class="method method-get">GET</span><code>/api/v1/billing/plans</code><p>套餐与按次定价</p></div>
+          <div class="endpoint"><span class="method method-get">GET</span><code>/api/v1/billing/usage</code><p>当前用量与余额</p></div>
+        </div>
+      </section>
+
+      <!-- WebSocket -->
+      <section class="api-section" id="section-docs-ws">
+        <div class="section-head">
+          <h1>WebSocket</h1>
+          <p>实时任务状态与感知事件推送</p>
+        </div>
+        <div class="endpoint"><span class="method method-get">WS</span><code>ws://localhost:8080/ws</code><p>连接后接收 task_created / sensor_ready 等事件</p></div>
+        <pre class="code-block">const ws = new WebSocket('ws://localhost:8080/ws');
+ws.onmessage = (e) => console.log(JSON.parse(e.data));
+ws.send(JSON.stringify({ action: 'ping' }));</pre>
+      </section>
+
+    </main>
+  </div>
+
+  <div class="toast hidden" id="toast"></div>
+  <script src="/static/js/api.js"></script>
 </body>
 </html>
