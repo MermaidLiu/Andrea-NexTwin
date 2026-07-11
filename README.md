@@ -12,7 +12,7 @@
 [![ROS2](https://img.shields.io/badge/ROS2-Humble-22314E?logo=ros&logoColor=white)](https://docs.ros.org)
 [![Three.js](https://img.shields.io/badge/Three.js-3D_Digital_Twin-black?logo=three.js)](https://threejs.org)
 
-[Demo 视频](#-demo-视频) · [快速开始](#-快速开始) · [架构图](#️-架构图) · [API 示例](#-api-示例)
+[Demo 视频](#-demo-视频) · [快速开始](#-快速开始) · [页面导航](#-页面导航) · [架构图](#️-架构图) · [API 示例](#-api-示例)
 
 </div>
 
@@ -99,9 +99,20 @@ chmod +x scripts/run_demo.sh scripts/install_deps.sh
 ./scripts/run_demo.sh
 ```
 
-**默认只装 FastAPI 等 4 个包**，不装 OpenCV / YOLO / numpy。
-- 首页：http://localhost:8080
-- Studio：http://localhost:8080/studio（UI 演示模式，10 步流程可跑通）
+**默认只装 FastAPI 等 5 个包**，不装 OpenCV / YOLO / numpy。
+
+| 页面 | 地址 | 说明 |
+|------|------|------|
+| 首页 | http://localhost:8080 | 品牌介绍与入口 |
+| 用户工作台 | http://localhost:8080/workspace | 4 步配置：场景 → 工作流 → 机器人 → 世界模型 |
+| 开发者中心 | http://localhost:8080/developer | SDK / 世界模型上传与优化 |
+| API 平台 | http://localhost:8080/docs | 接口文档 · 包月/按次计费 · 用量统计 |
+| 救援 Demo | http://localhost:8080/studio | G1 无人救援 10 步大屏 |
+
+```bash
+./scripts/run_demo.sh
+# → 首页 / 工作台 / 开发者 / API 平台 / Studio
+```
 
 ### 按需安装 G1 感知 + YOLO
 
@@ -185,6 +196,36 @@ python3 -m nextwin
 
 未配置 API Key 时，系统自动使用规则解析器（Demo 完全可用）。
 
+## 🖥️ 页面导航
+
+### 用户工作台 `/workspace`
+
+面向终端用户的 4 步配置流程：
+
+1. **新建场景** — 召唤「小星」数字助手，自然语言描述任务
+2. **工作流搭建** — 可视化拖拽节点（类似 Coze），编排感知 → 规划 → 执行
+3. **选择机器人** — 按供应商/类型浏览（宇树 G1、Go2 等）
+4. **选择世界模型** — 平台入驻 / 开源模型，按还原度与场景匹配
+
+底部控制台实时展示测评得分、真机对比数据与执行日志。
+
+### 开发者中心 `/developer`
+
+面向个人开发者：
+
+- 上传 SDK（`.zip` / `.tar.gz` / `.whl`）
+- SDK 优化分析（延迟 / 内存 / 带宽 / 功耗）
+- 上传世界模型（USD / YAML / zip）
+- 沙盒调试 · 性能测评 · API Key · Webhook · 发布上架
+
+### API 平台 `/docs`
+
+DeepSeek 风格的 API 控制台：
+
+- **包月套餐** — 免费版 / 开发者版 / 专业版 / 企业版
+- **按次计费** — 任务解析、执行流水线、感知扫描等按调用扣费
+- 用量统计 · API Key 管理 · 完整接口文档
+
 ## 🛠️ 技术栈
 
 | 层级 | 技术 |
@@ -202,40 +243,44 @@ python3 -m nextwin
 Andrea-NexTwin/
 ├── nextwin/
 │   ├── vision/                     # Layer 2: G1 相机四向切分
-│   │   └── pipeline.py
 │   ├── perception/                 # Layer 3: YOLO 检测
 │   ├── control/                    # Layer 5: 运动控制（你来实现）
-│   ├── config.py                   # G1 / YOLO 配置
 │   ├── rtv/                        # Layer 4: RTV 融合管线
-│   │   ├── pipeline.py             # 感知 → 切分 → YOLO → 观察
-│   │   ├── lidar_processor.py      # 点云 → BEV + 四向视图
-│   │   ├── panoramic.py            # 相机四向切分
-│   │   └── detector.py             # YOLO + Mock 检测器
-│   └── devices/                    # G1 硬件桥接
-│       ├── unitree_bridge.py       # 统一传感器桥 (mock|ros2|sdk)
-│       ├── ros2_bridge.py          # ROS2 订阅
-│       ├── g1_control.py           # G1 运动控制
-│       ├── g1_config.py            # G1 话题预设
-│       └── mock_sensor.py          # 合成 Livox + D435i 数据
+│   ├── devices/                    # G1 硬件桥接 (mock|ros2|sdk)
+│   ├── billing.py                  # API 套餐与按次定价
+│   ├── developer_store.py          # SDK / 世界模型上传注册表
+│   ├── config.py
+│   ├── server.py                   # FastAPI 路由
+│   └── runtime.py                  # UI 模式 / Full 模式切换
 ├── web/
-│   ├── index.html                  # NexTwin Studio 首页
-│   ├── studio.html                 # 无人救援控制台
-│   ├── docs.html                   # API 文档页
+│   ├── index.html                  # 品牌首页
+│   ├── workspace.html              # 用户工作台（4 步配置）
+│   ├── developer.html              # 开发者中心
+│   ├── docs.html                   # API 平台（文档 + 计费）
+│   ├── studio.html                 # 无人救援 Demo 大屏
 │   ├── css/
-│   │   ├── tokens.css              # 品牌色 Design Tokens
-│   │   ├── landing.css             # 首页样式
-│   │   └── studio.css              # 控制台样式
+│   │   ├── tokens.css              # 品牌 Design Tokens (#0070FF / #9030F0)
+│   │   ├── landing.css             # 首页
+│   │   ├── workspace.css           # 工作台
+│   │   ├── developer.css           # 开发者中心
+│   │   ├── api.css                 # API 平台
+│   │   └── studio.css              # 救援控制台
 │   └── js/
-│       ├── app.js                  # 主逻辑 + WebSocket
+│       ├── home.js                 # 首页交互
+│       ├── workspace.js            # 工作台逻辑
+│       ├── developer.js            # 开发者中心
+│       ├── api.js                  # API 平台 / 计费 UI
+│       ├── app.js                  # Studio 主逻辑 + WebSocket
 │       └── scene3d.js              # Three.js 3D 场景
+├── uploads/                        # SDK / 世界模型上传目录（gitignore）
 ├── configs/
-│   ├── g1_sensor.yaml              # G1 传感器配置
-│   └── rescue_scene.yaml           # 救援场景配置
 ├── scripts/
 │   ├── run_demo.sh                 # 一键启动
-│   └── setup_g1_ros2.sh            # G1 ROS2 环境脚本
-├── .env.g1.example                 # G1 真机环境变量示例
-├── requirements.txt
+│   ├── install_deps.sh             # 最小依赖安装
+│   └── install_vision.sh           # 可选：OpenCV + numpy
+├── requirements.txt                # 最小依赖（5 包）
+├── requirements-vision.txt         # 可选视觉库
+├── requirements-yolo.txt           # 可选 YOLO
 └── README.md
 ```
 
@@ -283,6 +328,20 @@ curl -X POST http://localhost:8080/api/v1/execute \
   -d '{"use_simulation": true}'
 ```
 
+### 计费与开发者 API
+
+```bash
+# 获取套餐与按次定价
+curl http://localhost:8080/api/v1/billing/plans
+
+# 获取用量与余额
+curl http://localhost:8080/api/v1/billing/usage
+
+# 上传 SDK（multipart）
+curl -X POST http://localhost:8080/api/v1/developer/sdk/upload \
+  -F "name=unitree-g1-rescue-sdk" -F "version=1.0.0" -F "robot=unitree-g1"
+```
+
 ### WebSocket 实时推送
 
 ```
@@ -315,10 +374,11 @@ ws://localhost:8080/ws
 | 阶段 | 目标 | 状态 |
 |------|------|------|
 | **Demo 1.0** | 10 步救援闭环 + Mock 感知 + 大屏展示 | ✅ 完成 |
+| **Studio UI** | 品牌首页 + 用户工作台 + 开发者中心 | ✅ 完成 |
+| **API 平台** | 包月/按次计费 + 接口文档 + 用量统计 | ✅ 完成 |
 | **Demo 2.0** | G1 真机 ROS2 感知对接 | 🟡 进行中 |
 | **Demo 3.0** | G1 低层运动控制 (unitree_ros2) | ⚪ 计划中 |
-| **Studio 1.0** | Hyper3D 场景自动生成 | ⚪ 计划中 |
-| **Cloud** | API 平台 + 数据沉淀 | ⚪ 计划中 |
+| **Studio 2.0** | Hyper3D 场景自动生成 | ⚪ 计划中 |
 
 ## 👥 Team
 

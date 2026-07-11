@@ -21,71 +21,63 @@
       <a href="/docs">API</a>
     </nav>
     <div class="ws-header-right">
+      <div class="progress-pill"><span id="progress-label">步骤 1/4</span><div class="progress-track"><i id="progress-bar" style="width:25%"></i></div></div>
       <span class="tag-blue" id="ws-status">配置中</span>
       <div class="user-chip"><div class="user-avatar">U</div><span>用户</span></div>
     </div>
   </header>
 
-  <div class="ws-body">
-    <!-- 左侧流程图 -->
-    <aside class="ws-flow" aria-label="配置流程">
-      <h2 class="flow-title">配置流程</h2>
-      <ol class="flow-steps" id="flow-steps">
-        <li class="flow-step active" data-step="scene">
-          <div class="step-node"><span class="step-num">1</span></div>
-          <div class="step-info">
-            <strong>新建场景</strong>
-            <span>召唤小星，描述你的任务</span>
-          </div>
-        </li>
-        <li class="flow-connector"></li>
-        <li class="flow-step" data-step="workflow">
-          <div class="step-node"><span class="step-num">2</span></div>
-          <div class="step-info">
-            <strong>工作流搭建</strong>
-            <span>可视化编排执行逻辑</span>
-          </div>
-        </li>
-        <li class="flow-connector"></li>
-        <li class="flow-step" data-step="robot">
-          <div class="step-node"><span class="step-num">3</span></div>
-          <div class="step-info">
-            <strong>选择机器人</strong>
-            <span>供应商 · 版本 · 场景</span>
-          </div>
-        </li>
-        <li class="flow-connector"></li>
-        <li class="flow-step" data-step="worldmodel">
-          <div class="step-node"><span class="step-num">4</span></div>
-          <div class="step-info">
-            <strong>选择世界模型</strong>
-            <span>开源 / 平台入驻模型库</span>
-          </div>
-        </li>
-      </ol>
-      <div class="flow-actions">
-        <button class="btn-brand btn-ghost-light" id="btn-prev" disabled>上一步</button>
-        <button class="btn-brand btn-primary" id="btn-next">下一步</button>
-      </div>
-    </aside>
+  <!-- 横向步骤条 -->
+  <div class="ws-stepper-bar">
+    <ol class="ws-stepper" id="flow-steps">
+      <li class="ws-step active" data-step="scene">
+        <span class="ws-step-icon">1</span>
+        <div class="ws-step-text"><strong>新建场景</strong><span>描述任务</span></div>
+      </li>
+      <li class="ws-step" data-step="workflow">
+        <span class="ws-step-icon">2</span>
+        <div class="ws-step-text"><strong>工作流</strong><span>编排逻辑</span></div>
+      </li>
+      <li class="ws-step" data-step="robot">
+        <span class="ws-step-icon">3</span>
+        <div class="ws-step-text"><strong>机器人</strong><span>选择设备</span></div>
+      </li>
+      <li class="ws-step" data-step="worldmodel">
+        <span class="ws-step-icon">4</span>
+        <div class="ws-step-text"><strong>世界模型</strong><span>匹配场景</span></div>
+      </li>
+    </ol>
+    <div class="ws-stepper-actions">
+      <button class="btn-brand btn-ghost-light btn-sm" id="btn-prev" disabled>上一步</button>
+      <button class="btn-brand btn-primary btn-sm" id="btn-next">下一步</button>
+    </div>
+  </div>
 
-    <!-- 右侧主内容 -->
+  <div class="ws-layout">
     <main class="ws-main" id="ws-main">
 
-      <!-- Step 1: 新建场景 -->
+      <!-- Step 1 -->
       <section class="step-panel active" id="panel-scene">
-        <div class="scene-hero">
-          <div class="digital-human">
-            <div class="dh-avatar" aria-hidden="true">
-              <div class="dh-glow"></div>
-              <div class="dh-face">✦</div>
+        <div class="panel-card scene-layout">
+          <div class="scene-left">
+            <div class="digital-human">
+              <div class="dh-avatar" aria-hidden="true">
+                <div class="dh-ring"></div>
+                <div class="dh-face">✦</div>
+              </div>
+              <h1>召唤小星</h1>
+              <p class="dh-tagline">NexTwin 数字孪生助手，帮你把自然语言变成可执行的机器人任务。</p>
+              <ul class="scene-tips">
+                <li>🎯 描述目标场景与任务</li>
+                <li>🤖 自动匹配机器人和世界模型</li>
+                <li>📊 实时测评与优化建议</li>
+              </ul>
             </div>
-            <h1>召唤你的小星</h1>
-            <p class="dh-tagline">我是 NexTwin 数字孪生助手，告诉我你想让机器人在什么场景里做什么。</p>
           </div>
-          <div class="gemini-input-wrap">
+          <div class="scene-right">
+            <label class="input-label">任务描述</label>
             <div class="gemini-input">
-              <textarea id="scene-prompt" rows="3" placeholder="例如：在坍塌现场找到被压住的 Mini Pi，规划救援路径并推动障碍物…"></textarea>
+              <textarea id="scene-prompt" rows="5" placeholder="例如：在坍塌现场找到被压住的 Mini Pi，规划救援路径并推动障碍物…"></textarea>
               <div class="gemini-toolbar">
                 <div class="gemini-hints">
                   <button type="button" class="hint-chip" data-hint="无人救援：找到被困目标并实施救援">🚨 无人救援</button>
@@ -99,85 +91,100 @@
         </div>
       </section>
 
-      <!-- Step 2: 工作流搭建 -->
+      <!-- Step 2 -->
       <section class="step-panel" id="panel-workflow">
-        <div class="panel-head">
-          <h2>工作流搭建</h2>
-          <p>拖拽节点、连接逻辑，类似 Coze 自定义你的具身智能流水线</p>
-          <div class="panel-tools">
-            <button type="button" class="btn-brand btn-ghost-light btn-sm" id="btn-add-node">+ 添加节点</button>
-            <button type="button" class="btn-brand btn-secondary btn-sm" id="btn-auto-flow">自动生成</button>
+        <div class="panel-card">
+          <div class="panel-head">
+            <div>
+              <h2>工作流搭建</h2>
+              <p>拖拽节点、连接逻辑，自定义具身智能流水线</p>
+            </div>
+            <div class="panel-tools">
+              <button type="button" class="btn-brand btn-ghost-light btn-sm" id="btn-add-node">+ 添加节点</button>
+              <button type="button" class="btn-brand btn-secondary btn-sm" id="btn-auto-flow">自动生成</button>
+            </div>
           </div>
-        </div>
-        <div class="coze-canvas" id="coze-canvas">
-          <svg class="flow-lines" id="flow-lines"></svg>
-          <div class="wf-node start" data-id="n1" style="left:40px;top:80px">
-            <span class="wf-icon">🗣️</span><strong>语言输入</strong><small>用户指令</small>
+          <div class="coze-canvas" id="coze-canvas">
+            <svg class="flow-lines" id="flow-lines"></svg>
+            <div class="wf-node start" data-id="n1" style="left:48px;top:100px">
+              <span class="wf-icon">🗣️</span><strong>语言输入</strong><small>用户指令</small>
+            </div>
+            <div class="wf-node" data-id="n2" style="left:240px;top:80px">
+              <span class="wf-icon">🧠</span><strong>任务解析</strong><small>LLM / 规则</small>
+            </div>
+            <div class="wf-node" data-id="n3" style="left:432px;top:100px">
+              <span class="wf-icon">🌐</span><strong>世界模型</strong><small>物理仿真</small>
+            </div>
+            <div class="wf-node" data-id="n4" style="left:624px;top:48px">
+              <span class="wf-icon">👁️</span><strong>感知</strong><small>LiDAR + 视觉</small>
+            </div>
+            <div class="wf-node" data-id="n5" style="left:624px;top:180px">
+              <span class="wf-icon">⚙️</span><strong>规则引擎</strong><small>动作规划</small>
+            </div>
+            <div class="wf-node end" data-id="n6" style="left:816px;top:110px">
+              <span class="wf-icon">🦾</span><strong>机器人执行</strong><small>真机 / 仿真</small>
+            </div>
           </div>
-          <div class="wf-node" data-id="n2" style="left:220px;top:60px">
-            <span class="wf-icon">🧠</span><strong>任务解析</strong><small>LLM / 规则</small>
+          <div class="node-palette" id="node-palette">
+            <span class="palette-label">可添加</span>
+            <button type="button" data-type="yolo">YOLO 检测</button>
+            <button type="button" data-type="lidar">LiDAR 融合</button>
+            <button type="button" data-type="branch">条件分支</button>
+            <button type="button" data-type="api">API 回调</button>
           </div>
-          <div class="wf-node" data-id="n3" style="left:400px;top:80px">
-            <span class="wf-icon">🌐</span><strong>世界模型</strong><small>物理仿真</small>
-          </div>
-          <div class="wf-node" data-id="n4" style="left:580px;top:40px">
-            <span class="wf-icon">👁️</span><strong>感知</strong><small>LiDAR + 视觉</small>
-          </div>
-          <div class="wf-node" data-id="n5" style="left:580px;top:160px">
-            <span class="wf-icon">⚙️</span><strong>规则引擎</strong><small>动作规划</small>
-          </div>
-          <div class="wf-node end" data-id="n6" style="left:760px;top:100px">
-            <span class="wf-icon">🦾</span><strong>机器人执行</strong><small>真机 / 仿真</small>
-          </div>
-        </div>
-        <div class="node-palette" id="node-palette">
-          <span class="palette-label">可添加：</span>
-          <button type="button" data-type="yolo">YOLO 检测</button>
-          <button type="button" data-type="lidar">LiDAR 融合</button>
-          <button type="button" data-type="branch">条件分支</button>
-          <button type="button" data-type="api">API 回调</button>
         </div>
       </section>
 
-      <!-- Step 3: 选择机器人 -->
+      <!-- Step 3 -->
       <section class="step-panel" id="panel-robot">
-        <div class="panel-head">
-          <h2>选择机器人</h2>
-          <p>按供应商浏览产品，查看版本与适用场景</p>
+        <div class="panel-card">
+          <div class="panel-head">
+            <div>
+              <h2>选择机器人</h2>
+              <p>按供应商浏览产品，查看版本与适用场景</p>
+            </div>
+          </div>
+          <div class="filter-bar">
+            <button class="filter active" data-filter="all">全部</button>
+            <button class="filter" data-filter="humanoid">人形</button>
+            <button class="filter" data-filter="quadruped">四足</button>
+            <button class="filter" data-filter="arm">机械臂</button>
+          </div>
+          <div class="card-grid" id="robot-grid"></div>
         </div>
-        <div class="filter-bar">
-          <button class="filter active" data-filter="all">全部</button>
-          <button class="filter" data-filter="humanoid">人形</button>
-          <button class="filter" data-filter="quadruped">四足</button>
-          <button class="filter" data-filter="arm">机械臂</button>
-        </div>
-        <div class="card-grid" id="robot-grid"></div>
       </section>
 
-      <!-- Step 4: 选择世界模型 -->
+      <!-- Step 4 -->
       <section class="step-panel" id="panel-worldmodel">
-        <div class="panel-head">
-          <h2>选择世界模型</h2>
-          <p>开源社区模型与 NexTwin 平台入驻模型，按还原度与场景匹配</p>
+        <div class="panel-card">
+          <div class="panel-head">
+            <div>
+              <h2>选择世界模型</h2>
+              <p>开源社区与平台入驻模型，按还原度与场景匹配</p>
+            </div>
+          </div>
+          <div class="filter-bar">
+            <button class="filter active" data-wm="all">全部</button>
+            <button class="filter" data-wm="platform">平台入驻</button>
+            <button class="filter" data-wm="opensource">开源</button>
+            <button class="filter" data-wm="rescue">救援</button>
+          </div>
+          <div class="card-grid wm-grid" id="wm-grid"></div>
         </div>
-        <div class="filter-bar">
-          <button class="filter active" data-wm="all">全部</button>
-          <button class="filter" data-wm="platform">平台入驻</button>
-          <button class="filter" data-wm="opensource">开源</button>
-          <button class="filter" data-wm="rescue">救援</button>
-        </div>
-        <div class="card-grid wm-grid" id="wm-grid"></div>
       </section>
 
     </main>
   </div>
 
   <!-- 底部控制台 -->
-  <footer class="ws-console">
-    <div class="console-tabs">
-      <button class="console-tab active" data-tab="eval">测评结果</button>
-      <button class="console-tab" data-tab="realdata">真实测评数据</button>
-      <button class="console-tab" data-tab="logs">执行日志</button>
+  <footer class="ws-console" id="ws-console">
+    <div class="console-header">
+      <div class="console-tabs">
+        <button class="console-tab active" data-tab="eval">测评结果</button>
+        <button class="console-tab" data-tab="realdata">真实测评数据</button>
+        <button class="console-tab" data-tab="logs">执行日志</button>
+      </div>
+      <button type="button" class="console-toggle" id="btn-console-toggle" aria-label="折叠控制台">▼</button>
     </div>
     <div class="console-body">
       <div class="tab-panel active" id="tab-eval">
@@ -207,6 +214,7 @@
     </div>
   </footer>
 
+  <div class="toast hidden" id="toast"></div>
   <script src="/static/js/workspace.js"></script>
 </body>
 </html>
