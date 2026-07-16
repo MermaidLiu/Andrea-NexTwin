@@ -1,0 +1,208 @@
+.waic-icon {
+  --icon-color: #4A7FD4;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36rpx;
+  height: 36rpx;
+}
+
+.waic-icon.active {
+  --icon-color: #A234D5;
+}
+
+/* Venue – minimal building */
+.ico-venue-roof {
+  position: absolute;
+  top: 4rpx;
+  width: 0;
+  height: 0;
+  border-left: 14rpx solid transparent;
+  border-right: 14rpx solid transparent;
+  border-bottom: 12rpx solid var(--icon-color);
+}
+
+.ico-venue-body {
+  position: absolute;
+  bottom: 2rpx;
+  width: 22rpx;
+  height: 16rpx;
+  background: var(--icon-color);
+  border-radius: 2rpx;
+  opacity: 0.85;
+}
+
+/* Track – target rings */
+.ico-track-ring {
+  position: absolute;
+  width: 28rpx;
+  height: 28rpx;
+  border: 3rpx solid var(--icon-color);
+  border-radius: 50%;
+  opacity: 0.5;
+}
+
+.ico-track-core {
+  position: absolute;
+  width: 10rpx;
+  height: 10rpx;
+  background: var(--icon-color);
+  border-radius: 50%;
+}
+
+/* Chevrons */
+.ico-chevron {
+  width: 14rpx;
+  height: 14rpx;
+  border-top: 3rpx solid var(--icon-color);
+  border-right: 3rpx solid var(--icon-color);
+}
+
+.ico-chevron.up {
+  transform: rotate(-45deg);
+  margin-top: 6rpx;
+}
+
+.ico-chevron.down {
+  transform: rotate(135deg);
+  margin-bottom: 6rpx;
+}
+
+/* Close */
+.ico-close-line {
+  position: absolute;
+  width: 24rpx;
+  height: 3rpx;
+  background: var(--icon-color);
+  border-radius: 2rpx;
+}
+
+.ico-close-line.l1 { transform: rotate(45deg); }
+.ico-close-line.l2 { transform: rotate(-45deg); }
+
+/* Arrow right */
+.ico-arrow-stem {
+  position: absolute;
+  width: 18rpx;
+  height: 3rpx;
+  background: var(--icon-color);
+  border-radius: 2rpx;
+  left: 4rpx;
+}
+
+.ico-arrow-head {
+  position: absolute;
+  right: 4rpx;
+  width: 10rpx;
+  height: 10rpx;
+  border-top: 3rpx solid var(--icon-color);
+  border-right: 3rpx solid var(--icon-color);
+  transform: rotate(45deg);
+}
+
+.ico-arrow-stem.left {
+  right: auto;
+  left: 8rpx;
+}
+
+.ico-arrow-head.left {
+  right: auto;
+  left: 4rpx;
+  transform: rotate(-135deg);
+}
+
+/* Heart / wishlist */
+.ico-heart-wrap {
+  position: relative;
+  width: 28rpx;
+  height: 26rpx;
+}
+
+.ico-heart-circle {
+  position: absolute;
+  top: 0;
+  width: 14rpx;
+  height: 14rpx;
+  background: var(--icon-color);
+  border-radius: 50%;
+  opacity: 0.7;
+}
+
+.ico-heart-circle.left { left: 2rpx; }
+.ico-heart-circle.right { right: 2rpx; }
+
+.ico-heart-square {
+  position: absolute;
+  bottom: 2rpx;
+  left: 50%;
+  width: 16rpx;
+  height: 16rpx;
+  margin-left: -8rpx;
+  background: var(--icon-color);
+  transform: rotate(45deg);
+  border-radius: 3rpx;
+  opacity: 0.7;
+}
+
+.ico-heart-wrap.filled .ico-heart-circle,
+.ico-heart-wrap.filled .ico-heart-square {
+  background: #A234D5;
+  opacity: 1;
+}
+
+/* Bell */
+.ico-bell-body {
+  position: absolute;
+  top: 4rpx;
+  width: 20rpx;
+  height: 18rpx;
+  border: 3rpx solid var(--icon-color);
+  border-radius: 10rpx 10rpx 4rpx 4rpx;
+  border-bottom-width: 4rpx;
+}
+
+.ico-bell-clapper {
+  position: absolute;
+  bottom: 2rpx;
+  width: 6rpx;
+  height: 6rpx;
+  background: var(--icon-color);
+  border-radius: 50%;
+}
+
+/* Dot marker for tracks */
+.ico-dot {
+  width: 14rpx;
+  height: 14rpx;
+  background: var(--icon-color);
+  border-radius: 50%;
+  box-shadow: 0 0 8rpx var(--icon-color);
+}
+
+/* Twin stars – Star Twin Alliance */
+.ico-star {
+  position: absolute;
+  width: 14rpx;
+  height: 14rpx;
+  background: var(--icon-color);
+  opacity: 0.65;
+  transform: rotate(45deg);
+  border-radius: 2rpx;
+}
+
+.ico-star.left {
+  left: 6rpx;
+  top: 10rpx;
+}
+
+.ico-star.right {
+  right: 6rpx;
+  bottom: 10rpx;
+}
+
+.ico-star.active {
+  background: #A234D5;
+  opacity: 1;
+  box-shadow: 0 0 10rpx rgba(162, 52, 213, 0.6);
+}

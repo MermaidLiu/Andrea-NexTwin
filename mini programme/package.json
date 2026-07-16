@@ -1,0 +1,16 @@
+{
+  "name": "waic-miniprogramme",
+  "version": "1.0.0",
+  "description": "WAIC 2026 Cross-Venue Forum Navigation Mini-Program",
+  "main": "app.js",
+  "scripts": {
+    "postinstall": "echo 'Run npm install in WeChat DevTools: Tools > Build npm'"
+  },
+  "dependencies": {
+    "threejs-miniprogram": "^0.0.8"
+  },
+  "devDependencies": {},
+  "keywords": ["waic", "wechat", "miniprogram"],
+  "author": "",
+  "license": "MIT"
+}

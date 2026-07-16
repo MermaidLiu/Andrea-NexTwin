@@ -1,0 +1,20 @@
+<view class="bottom-nav">
+  <view
+    class="nav-item {{activeMode === 'venue' ? 'active' : ''}}"
+    bindtap="onVenueTap"
+  >
+    <view class="nav-icon-wrap">
+      <waic-icon type="venue" color="{{activeMode === 'venue' ? '#4A7FD4' : '#6B82B0'}}" />
+    </view>
+    <text class="nav-label">{{labels.venue}}</text>
+  </view>
+  <view
+    class="nav-item {{activeMode === 'track' ? 'active' : ''}}"
+    bindtap="onTrackTap"
+  >
+    <view class="nav-icon-wrap">
+      <waic-icon type="track" color="{{activeMode === 'track' ? '#A234D5' : '#6B82B0'}}" />
+    </view>
+    <text class="nav-label">{{labels.track}}</text>
+  </view>
+</view>

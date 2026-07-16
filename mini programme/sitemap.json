@@ -1,0 +1,9 @@
+{
+  "desc": "WAIC 2026 sitemap",
+  "rules": [
+    {
+      "action": "allow",
+      "page": "*"
+    }
+  ]
+}

@@ -1,0 +1,60 @@
+<view class="drawer-mask {{visible ? 'show' : ''}}" bindtap="onClose" catchtouchmove="preventMove"></view>
+<view class="venue-drawer {{visible ? 'show' : ''}} safe-area-bottom">
+  <view class="drawer-handle"></view>
+
+  <swiper
+    class="session-swiper"
+    current="{{currentIndex}}"
+    bindchange="onSwiperChange"
+    duration="300"
+    easing-function="easeOutCubic"
+  >
+    <swiper-item wx:for="{{sessions}}" wx:key="id">
+      <scroll-view scroll-y class="drawer-content">
+        <view class="venue-badge">{{item.venueName}}</view>
+        <text class="session-title">{{item.name}}</text>
+        <text class="session-desc">{{item.desc}}</text>
+
+        <view class="meta-row">
+          <text class="meta-label">{{labels.floor}}</text>
+          <text class="meta-value">{{item.floorLabel}}</text>
+        </view>
+        <view class="meta-row">
+          <text class="meta-label">{{labels.hall}}</text>
+          <text class="meta-value">{{item.hall}}</text>
+        </view>
+        <view class="meta-row">
+          <text class="meta-label">{{labels.time}}</text>
+          <text class="meta-value">{{item.timeRange}}</text>
+        </view>
+        <view class="meta-row">
+          <text class="meta-label">{{labels.speaker}}</text>
+          <text class="meta-value">{{item.speaker}}</text>
+        </view>
+
+        <view class="track-tags">
+          <view
+            class="track-tag"
+            wx:for="{{item.trackNames}}"
+            wx:for-item="trackName"
+            wx:key="*this"
+          >{{trackName}}</view>
+        </view>
+
+        <view
+          class="wishlist-btn {{item.inWishlist ? 'active' : ''}}"
+          bindtap="onToggleWishlist"
+          data-id="{{item.id}}"
+        >
+          <waic-icon type="wishlist" color="{{item.inWishlist ? '#A234D5' : '#4A7FD4'}}" active="{{item.inWishlist}}" />
+          <text>{{item.inWishlist ? labels.inWishlist : labels.addWishlist}}</text>
+        </view>
+      </scroll-view>
+    </swiper-item>
+  </swiper>
+
+  <view class="swipe-hint" wx:if="{{sessions.length > 1}}">
+    <text>{{labels.swipeHint}}</text>
+    <text class="page-indicator">{{currentIndex + 1}} / {{sessions.length}}</text>
+  </view>
+</view>

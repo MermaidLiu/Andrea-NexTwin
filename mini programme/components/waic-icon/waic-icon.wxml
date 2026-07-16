@@ -1,0 +1,46 @@
+<view class="waic-icon waic-icon-{{type}} {{active ? 'active' : ''}}" style="{{color ? '--icon-color:' + color + ';' : ''}}">
+  <block wx:if="{{type === 'venue'}}">
+    <view class="ico-venue-roof"></view>
+    <view class="ico-venue-body"></view>
+  </block>
+  <block wx:elif="{{type === 'track'}}">
+    <view class="ico-track-ring"></view>
+    <view class="ico-track-core"></view>
+  </block>
+  <block wx:elif="{{type === 'chevron-up'}}">
+    <view class="ico-chevron up"></view>
+  </block>
+  <block wx:elif="{{type === 'chevron-down'}}">
+    <view class="ico-chevron down"></view>
+  </block>
+  <block wx:elif="{{type === 'close'}}">
+    <view class="ico-close-line l1"></view>
+    <view class="ico-close-line l2"></view>
+  </block>
+  <block wx:elif="{{type === 'arrow-left'}}">
+    <view class="ico-arrow-stem left"></view>
+    <view class="ico-arrow-head left"></view>
+  </block>
+  <block wx:elif="{{type === 'arrow-right'}}">
+    <view class="ico-arrow-stem"></view>
+    <view class="ico-arrow-head"></view>
+  </block>
+  <block wx:elif="{{type === 'wishlist'}}">
+    <view class="ico-heart-wrap {{active ? 'filled' : ''}}">
+      <view class="ico-heart-circle left"></view>
+      <view class="ico-heart-circle right"></view>
+      <view class="ico-heart-square"></view>
+    </view>
+  </block>
+  <block wx:elif="{{type === 'bell'}}">
+    <view class="ico-bell-body"></view>
+    <view class="ico-bell-clapper"></view>
+  </block>
+  <block wx:elif="{{type === 'dot'}}">
+    <view class="ico-dot"></view>
+  </block>
+  <block wx:elif="{{type === 'alliance'}}">
+    <view class="ico-star left {{active ? 'active' : ''}}"></view>
+    <view class="ico-star right {{active ? 'active' : ''}}"></view>
+  </block>
+</view>

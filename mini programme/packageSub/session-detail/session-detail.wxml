@@ -1,0 +1,56 @@
+<view class="detail-page" wx:if="{{session}}">
+  <view class="detail-header">
+    <view class="back-btn" bindtap="onBack">
+      <waic-icon type="arrow-left" color="#4A7FD4" />
+      <text>{{labels.back}}</text>
+    </view>
+  </view>
+
+  <scroll-view scroll-y class="detail-scroll">
+    <view class="detail-content">
+      <view class="venue-badge">{{venueName}}</view>
+      <text class="session-title">{{sessionName}}</text>
+
+      <view class="info-card">
+        <view class="info-row">
+          <text class="info-label">{{labels.time}}</text>
+          <text class="info-value">{{timeRange}}</text>
+        </view>
+        <view class="info-row">
+          <text class="info-label">{{labels.location}}</text>
+          <text class="info-value">{{locationText}}</text>
+        </view>
+        <view class="info-row">
+          <text class="info-label">{{labels.speaker}}</text>
+          <text class="info-value">{{speaker}}</text>
+        </view>
+      </view>
+
+      <view class="section">
+        <text class="section-title">{{labels.tracks}}</text>
+        <view class="track-tags">
+          <view class="track-tag" wx:for="{{trackNames}}" wx:key="*this">{{item}}</view>
+        </view>
+      </view>
+
+      <view class="section">
+        <text class="section-title">{{labels.description}}</text>
+        <text class="section-body">{{sessionDesc}}</text>
+      </view>
+    </view>
+  </scroll-view>
+
+  <view class="bottom-action safe-area-bottom">
+    <view
+      class="action-btn wishlist-btn {{inWishlist ? 'active' : ''}}"
+      bindtap="onToggleWishlist"
+    >
+      <waic-icon type="wishlist" color="{{inWishlist ? '#A234D5' : '#4A7FD4'}}" active="{{inWishlist}}" />
+      <text>{{inWishlist ? labels.inWishlist : labels.addWishlist}}</text>
+    </view>
+    <view class="action-btn remind-btn" bindtap="onRemindMe">
+      <waic-icon type="bell" color="#fff" />
+      <text>{{labels.remindMe}}</text>
+    </view>
+  </view>
+</view>

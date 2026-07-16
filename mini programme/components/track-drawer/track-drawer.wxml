@@ -1,0 +1,71 @@
+<view class="track-drawer {{expanded ? 'expanded' : 'collapsed'}} {{selectedTrackId ? 'has-sessions' : ''}} safe-area-bottom">
+  <view class="drawer-header" bindtap="onToggleExpand">
+    <view class="header-left">
+      <text class="header-title">{{selectedTrackId ? labels.upcoming : labels.selectHint}}</text>
+      <text class="header-sub" wx:if="{{selectedTrackName}}">{{selectedTrackName}} · {{activeCountLabel}}</text>
+    </view>
+    <waic-icon type="{{expanded ? 'chevron-down' : 'chevron-up'}}" color="#6B82B0" />
+  </view>
+
+  <scroll-view scroll-y class="drawer-body" wx:if="{{expanded}}">
+    <!-- Track filter chips -->
+    <scroll-view scroll-x class="track-chips-scroll" enable-flex>
+      <view class="track-chips">
+        <view
+          class="track-chip {{selectedTrackId === '' ? 'active' : ''}}"
+          bindtap="onSelectTrack"
+          data-id=""
+        >
+          <text>{{labels.all}}</text>
+        </view>
+        <view
+          class="track-chip {{selectedTrackId === item.id ? 'active' : ''}}"
+          wx:for="{{tracks}}"
+          wx:key="id"
+          bindtap="onSelectTrack"
+          data-id="{{item.id}}"
+          style="border-color: {{item.color}}"
+        >
+          <waic-icon type="dot" color="{{item.color}}" />
+          <text>{{item.name}}</text>
+        </view>
+      </view>
+    </scroll-view>
+
+    <!-- Upcoming sessions for selected track -->
+    <view class="sessions-section" wx:if="{{selectedTrackId}}">
+      <text class="sessions-hint">{{labels.upcomingHint}}</text>
+
+      <view wx:if="{{sessions.length > 0}}">
+        <view
+          class="session-card"
+          wx:for="{{sessions}}"
+          wx:key="id"
+          bindtap="onSessionTap"
+          data-id="{{item.id}}"
+        >
+          <view class="session-card-header">
+            <text class="session-card-name">{{item.name}}</text>
+            <text class="session-card-time">{{item.timeRange}}</text>
+          </view>
+          <view class="session-card-venue">
+            <waic-icon type="venue" color="#4A7FD4" />
+            <text>{{item.venueName}}</text>
+          </view>
+          <view class="session-card-location">
+            <waic-icon type="dot" color="#A234D5" />
+            <text>{{item.locationName}} · {{item.address}}</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="no-sessions" wx:else>
+        <text>{{labels.noSessions}}</text>
+      </view>
+    </view>
+
+    <view class="pick-track-hint" wx:else>
+      <text>{{labels.selectHint}}</text>
+    </view>
+  </scroll-view>
+</view>

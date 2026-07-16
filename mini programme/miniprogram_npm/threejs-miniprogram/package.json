@@ -1,0 +1,7 @@
+{
+  "name": "threejs-miniprogram",
+  "version": "0.0.8",
+  "description": "ThreeJS adapter for WeChat MiniProgram",
+  "main": "index.js",
+  "miniprogram": "."
+}

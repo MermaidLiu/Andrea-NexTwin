@@ -1,0 +1,20 @@
+{
+  "usingComponents": {
+    "bottom-nav": "/components/bottom-nav/bottom-nav",
+    "i18n-switcher": "/components/i18n-switcher/i18n-switcher",
+    "venue-drawer": "/components/venue-drawer/venue-drawer",
+    "track-drawer": "/components/track-drawer/track-drawer",
+    "cross-venue-panel": "/components/cross-venue-panel/cross-venue-panel",
+    "waic-icon": "/components/waic-icon/waic-icon"
+  },
+  "componentPlaceholder": {
+    "bottom-nav": "view",
+    "i18n-switcher": "view",
+    "venue-drawer": "view",
+    "track-drawer": "view",
+    "cross-venue-panel": "view",
+    "waic-icon": "view"
+  },
+  "navigationStyle": "custom",
+  "disableScroll": true
+}

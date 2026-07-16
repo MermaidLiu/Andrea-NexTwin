@@ -1,0 +1,56 @@
+<view class="cross-venue-panel {{visible ? 'show' : ''}}">
+  <view class="panel-header">
+    <text class="panel-title">{{labels.title}}</text>
+    <view class="panel-close" bindtap="onClose">
+      <waic-icon type="close" color="#6B82B0" />
+    </view>
+  </view>
+
+  <view class="selector-section">
+    <text class="selector-label">{{labels.selectFrom}}</text>
+    <scroll-view scroll-x class="venue-scroll">
+      <view
+        class="venue-chip {{fromVenueId === item.id ? 'selected' : ''}}"
+        wx:for="{{venues}}"
+        wx:key="id"
+        bindtap="onSelectFrom"
+        data-id="{{item.id}}"
+      >{{item.name}}</view>
+    </scroll-view>
+  </view>
+
+  <view class="selector-section">
+    <text class="selector-label">{{labels.selectTo}}</text>
+    <scroll-view scroll-x class="venue-scroll">
+      <view
+        class="venue-chip {{toVenueId === item.id ? 'selected' : ''}}"
+        wx:for="{{venues}}"
+        wx:key="id"
+        bindtap="onSelectTo"
+        data-id="{{item.id}}"
+      >{{item.name}}</view>
+    </scroll-view>
+  </view>
+
+  <view class="action-row">
+    <button class="btn-calculate" bindtap="onCalculate" disabled="{{!fromVenueId || !toVenueId}}">
+      {{labels.calculate}}
+    </button>
+    <button class="btn-clear" bindtap="onClear" wx:if="{{routeResult}}">{{labels.clear}}</button>
+  </view>
+
+  <view class="route-result" wx:if="{{routeResult}}">
+    <view class="route-summary">
+      <text class="route-time">{{routeResult.totalTimeLabel}}</text>
+    </view>
+    <view class="route-steps">
+      <view class="step-item" wx:for="{{routeResult.instructions}}" wx:key="index">
+        <view class="step-dot"></view>
+        <view class="step-content">
+          <text class="step-text">{{item.text}}</text>
+          <text class="step-duration" wx:if="{{item.durationMin}}">{{item.durationMin}} min</text>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

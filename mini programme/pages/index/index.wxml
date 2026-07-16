@@ -1,0 +1,144 @@
+<view class="page-container">
+  <view class="map-area">
+    <canvas
+      type="webgl"
+      id="venueCanvas"
+      class="venue-canvas"
+      bindtouchstart="onTouchStart"
+      bindtouchmove="onTouchMove"
+      bindtouchend="onTouchEnd"
+      bindtouchcancel="onTouchEnd"
+    ></canvas>
+
+    <view class="top-bar">
+      <view class="brand-block">
+        <text class="app-title">WAIC</text>
+        <text class="app-year">2026</text>
+      </view>
+      <view class="top-actions">
+        <view class="cross-venue-btn" bindtap="onToggleCrossVenue">
+          <text>{{labels.crossVenue}}</text>
+        </view>
+        <view class="wishlist-entry" bindtap="onOpenWishlist">
+          <waic-icon type="wishlist" color="#4A7FD4" />
+          <view class="wishlist-badge" wx:if="{{wishlistCount > 0}}">{{wishlistCount}}</view>
+        </view>
+        <view class="alliance-entry" bindtap="onOpenAlliance">
+          <waic-icon type="alliance" color="{{isAllianceMember ? '#A234D5' : '#4A7FD4'}}" active="{{isAllianceMember}}" />
+        </view>
+      </view>
+    </view>
+
+    <i18n-switcher locale="{{locale}}" bind:localechange="onLocaleChange" />
+
+    <view class="welcome-overlay {{showWelcome ? 'show' : ''}}" wx:if="{{showWelcome || welcomeLeaving}}">
+      <view class="welcome-card">
+        <view class="welcome-brand-line"></view>
+        <text class="welcome-title">WAIC 2026</text>
+        <text class="welcome-subtitle">{{welcomeLabels.subtitle}}</text>
+        <text class="welcome-hint">{{welcomeLabels.hint}}</text>
+
+        <view class="location-cards">
+          <view
+            class="location-card"
+            wx:for="{{locationCards}}"
+            wx:key="id"
+            bindtap="onSelectLocation"
+            data-id="{{item.id}}"
+          >
+            <view class="location-dot" style="background: {{item.color}}"></view>
+            <view class="location-info">
+              <text class="location-name">{{item.name}}</text>
+              <text class="location-count">{{item.countLabel}}</text>
+            </view>
+            <waic-icon type="arrow-right" color="#4A7FD4" />
+          </view>
+        </view>
+
+        <view class="enter-map-btn" bindtap="onEnterMap">
+          <text>{{welcomeLabels.enterMap}}</text>
+        </view>
+
+        <view class="alliance-banner" bindtap="onOpenAlliance">
+          <waic-icon type="alliance" color="#A234D5" />
+          <view class="alliance-banner-text">
+            <text class="alliance-banner-title">{{labels.alliance}}</text>
+            <text class="alliance-banner-sub">{{labels.allianceHint}}</text>
+          </view>
+          <waic-icon type="arrow-right" color="#4A7FD4" />
+        </view>
+      </view>
+    </view>
+
+    <venue-drawer
+      visible="{{venueDrawerVisible}}"
+      sessions="{{drawerSessions}}"
+      currentIndex="{{drawerIndex}}"
+      labels="{{drawerLabels}}"
+      bind:close="onCloseVenueDrawer"
+      bind:swiperchange="onDrawerSwiperChange"
+      bind:togglewishlist="onDrawerToggleWishlist"
+    />
+
+    <track-drawer
+      wx:if="{{mode === 'track'}}"
+      tracks="{{tracks}}"
+      selectedTrackId="{{selectedTrackId}}"
+      selectedTrackName="{{selectedTrackName}}"
+      activeCount="{{activeTrackCount}}"
+      activeCountLabel="{{activeCountLabel}}"
+      sessions="{{trackSessions}}"
+      labels="{{trackLabels}}"
+      expanded="{{trackDrawerExpanded}}"
+      bind:toggleexpand="onToggleTrackDrawer"
+      bind:trackselect="onTrackSelect"
+      bind:sessionselect="onTrackSessionSelect"
+    />
+
+    <!-- Map labels in track mode -->
+    <view class="map-labels-layer" wx:if="{{mode === 'track' && selectedTrackId}}">
+      <view
+        class="zone-label"
+        wx:for="{{zoneLabels}}"
+        wx:key="locationId"
+        style="left: {{item.x}}px; top: {{item.y}}px;"
+      >
+        <text>{{item.name}}</text>
+      </view>
+      <view
+        class="poi-label"
+        wx:for="{{poiLabels}}"
+        wx:key="venueId"
+        style="left: {{item.x}}px; top: {{item.y}}px;"
+        bindtap="onPoiLabelTap"
+        data-id="{{item.venueId}}"
+      >
+        <text class="poi-label-name">{{item.venueName}}</text>
+        <text class="poi-label-loc">{{item.locationName}}</text>
+        <text class="poi-label-time" wx:if="{{item.sessionHint}}">{{item.sessionHint}}</text>
+      </view>
+    </view>
+
+    <cross-venue-panel
+      visible="{{crossVenueVisible}}"
+      venues="{{venueList}}"
+      fromVenueId="{{crossFromVenueId}}"
+      toVenueId="{{crossToVenueId}}"
+      routeResult="{{routeResult}}"
+      labels="{{crossVenueLabels}}"
+      bind:close="onCloseCrossVenue"
+      bind:selectfrom="onCrossSelectFrom"
+      bind:selectto="onCrossSelectTo"
+      bind:calculate="onCalculateRoute"
+      bind:clear="onClearRoute"
+    />
+  </view>
+
+  <view class="nav-area safe-area-bottom">
+    <bottom-nav
+      activeMode="{{mode}}"
+      labels="{{navLabels}}"
+      bind:modechange="onModeChange"
+    />
+  </view>
+</view>

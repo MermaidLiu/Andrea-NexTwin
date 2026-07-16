@@ -1,0 +1,59 @@
+<view class="alliance-page">
+  <view class="hero-section">
+    <view class="hero-glow"></view>
+    <view class="hero-icon-wrap">
+      <waic-icon type="alliance" color="#A234D5" active="{{isMember}}" />
+    </view>
+    <text class="hero-title">{{labels.name}}</text>
+    <text class="hero-tagline">{{labels.tagline}}</text>
+    <text class="hero-desc">{{labels.desc}}</text>
+  </view>
+
+  <view class="benefits-section">
+    <text class="section-title">{{labels.benefitsTitle}}</text>
+    <view class="benefit-item" wx:for="{{benefits}}" wx:key="*this">
+      <view class="benefit-dot"></view>
+      <text class="benefit-text">{{item}}</text>
+    </view>
+  </view>
+
+  <!-- Not yet joined -->
+  <view class="join-section" wx:if="{{!isMember}}">
+    <view class="join-btn" bindtap="onJoinAlliance">
+      <waic-icon type="alliance" color="#fff" />
+      <text>{{labels.join}}</text>
+    </view>
+    <text class="join-hint">{{labels.joinHint}}</text>
+  </view>
+
+  <!-- Joined: show group QR -->
+  <view class="group-section" wx:else>
+    <view class="member-badge">
+      <waic-icon type="alliance" color="#A234D5" active="{{true}}" />
+      <text>{{labels.memberBadge}}</text>
+    </view>
+
+    <text class="group-title">{{labels.groupTitle}}</text>
+    <text class="group-name">{{labels.groupName}}</text>
+
+    <view class="qr-wrap" bindtap="onPreviewQr">
+      <image
+        class="qr-image"
+        src="{{groupQrImage}}"
+        mode="aspectFit"
+        show-menu-by-longpress="{{true}}"
+      />
+    </view>
+
+    <text class="qr-hint">{{labels.qrHint}}</text>
+
+    <view class="action-row">
+      <view class="action-btn outline" bindtap="onPreviewQr">
+        <text>{{labels.previewQr}}</text>
+      </view>
+      <view class="action-btn primary" bindtap="onSaveQr">
+        <text>{{labels.saveQr}}</text>
+      </view>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,26 @@
+.i18n-switcher {
+  position: absolute;
+  top: calc(env(safe-area-inset-top) + 16rpx);
+  right: 24rpx;
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
+  background: rgba(35, 89, 190, 0.15);
+  backdrop-filter: blur(12px);
+  border: 1rpx solid rgba(35, 89, 190, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+}
+
+.i18n-switcher:active {
+  background: rgba(162, 52, 213, 0.25);
+}
+
+.i18n-text {
+  font-size: 24rpx;
+  font-weight: 600;
+  color: #4A7FD4;
+  letter-spacing: 1rpx;
+}

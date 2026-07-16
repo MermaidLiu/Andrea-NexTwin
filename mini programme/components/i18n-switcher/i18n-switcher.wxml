@@ -1,0 +1,3 @@
+<view class="i18n-switcher" bindtap="onToggle">
+  <text class="i18n-text">{{locale === 'zh' ? 'EN' : '中'}}</text>
+</view>

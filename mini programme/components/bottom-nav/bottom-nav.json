@@ -1,0 +1,9 @@
+{
+  "component": true,
+  "usingComponents": {
+    "waic-icon": "/components/waic-icon/waic-icon"
+  },
+  "componentPlaceholder": {
+    "waic-icon": "view"
+  }
+}

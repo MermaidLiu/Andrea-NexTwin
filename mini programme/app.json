@@ -1,0 +1,26 @@
+{
+  "pages": [
+    "pages/index/index"
+  ],
+  "subPackages": [
+    {
+      "root": "packageSub",
+      "name": "extra",
+      "pages": [
+        "session-detail/session-detail",
+        "wishlist/wishlist",
+        "alliance/alliance"
+      ]
+    }
+  ],
+  "window": {
+    "navigationBarBackgroundColor": "#0B1535",
+    "navigationBarTitleText": "WAIC 2026",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#0B1535",
+    "backgroundTextStyle": "light"
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents"
+}

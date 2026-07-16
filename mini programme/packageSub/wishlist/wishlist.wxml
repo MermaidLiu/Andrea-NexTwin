@@ -1,0 +1,29 @@
+<view class="wishlist-page">
+  <view class="page-header">
+    <view class="back-btn" bindtap="onBack">
+      <waic-icon type="arrow-left" color="#4A7FD4" />
+      <text>{{labels.back}}</text>
+    </view>
+    <text class="page-title">{{labels.title}}</text>
+    <text class="page-sub">{{labels.subtitle}}</text>
+  </view>
+
+  <scroll-view scroll-y class="wishlist-scroll" wx:if="{{items.length > 0}}">
+    <view class="wishlist-item" wx:for="{{items}}" wx:key="sessionId">
+      <view class="item-main" bindtap="onOpenSession" data-id="{{item.sessionId}}">
+        <text class="item-name">{{item.name}}</text>
+        <text class="item-venue">{{item.venueName}}</text>
+        <text class="item-time">{{item.timeRange}}</text>
+      </view>
+      <view class="item-remove" bindtap="onRemove" data-id="{{item.sessionId}}">
+        <waic-icon type="close" color="#6B82B0" />
+      </view>
+    </view>
+  </scroll-view>
+
+  <view class="empty-state" wx:else>
+    <waic-icon type="wishlist" color="#2359BE" />
+    <text class="empty-title">{{labels.empty}}</text>
+    <text class="empty-hint">{{labels.emptyHint}}</text>
+  </view>
+</view>
